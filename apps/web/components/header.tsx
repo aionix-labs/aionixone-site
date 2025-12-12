@@ -4,11 +4,13 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
+const DOCS_URL = process.env.NEXT_PUBLIC_DOCS_URL || 'https://docs.aionixone.com';
+
 const links = [
   { href: '/', label: 'Overview' },
   { href: '/features', label: 'Features' },
   { href: '/blog', label: 'Blog' },
-  { href: '/docs', label: 'Docs' }
+  { href: DOCS_URL, label: 'Docs', external: true }
 ];
 
 export function Header() {
@@ -28,19 +30,29 @@ export function Header() {
           AionixOne
         </Link>
         <nav className="flex items-center gap-6 text-sm text-white/70">
-          {links.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={
-                pathname === link.href
-                  ? 'text-white'
-                  : 'transition-colors hover:text-white'
-              }
-            >
-              {link.label}
-            </Link>
-          ))}
+          {links.map((link) =>
+            'external' in link ? (
+              <a
+                key={link.href}
+                href={link.href}
+                className="transition-colors hover:text-white"
+              >
+                {link.label}
+              </a>
+            ) : (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={
+                  pathname === link.href
+                    ? 'text-white'
+                    : 'transition-colors hover:text-white'
+                }
+              >
+                {link.label}
+              </Link>
+            )
+          )}
         </nav>
       </div>
     </header>
