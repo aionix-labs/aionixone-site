@@ -1,4 +1,5 @@
 import { Button } from '@aionixone/ui';
+import { docsUrl } from '@/lib/constants';
 
 export function CallToAction() {
   return (
@@ -19,7 +20,7 @@ export function CallToAction() {
           </a>
         </Button>
         <Button asChild variant="ghost">
-          <a href="/docs/getting-started">Read Quick Start Guide</a>
+          <a href={docsUrl('/getting-started')}>Read Quick Start Guide</a>
         </Button>
       </div>
 

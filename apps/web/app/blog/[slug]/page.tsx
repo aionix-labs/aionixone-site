@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Header } from '@/components/header';
 import { notFound } from 'next/navigation';
+import { docsUrl } from '@/lib/constants';
 
 // Blog posts content - will be moved to MDX files later
 const posts: Record<
@@ -156,7 +157,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
                 Download Community Edition
               </a>
               <a
-                href="/docs/getting-started"
+                href={docsUrl('/getting-started')}
                 className="inline-flex items-center justify-center rounded-full border border-white/20 px-5 py-2 text-sm font-medium text-white transition hover:border-white/40"
               >
                 Read Quick Start Guide

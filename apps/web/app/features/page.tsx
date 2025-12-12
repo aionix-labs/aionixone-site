@@ -4,6 +4,7 @@ import { GovernanceRules } from '@/components/governance-rules';
 import { GovernanceBenefits } from '@/components/governance-benefits';
 import { StudioPreview } from '@/components/studio-preview';
 import { AntiFeatures } from '@/components/anti-features';
+import { DOCS_URL } from '@/lib/constants';
 
 export default function FeaturesPage() {
   return (
@@ -55,7 +56,7 @@ export default function FeaturesPage() {
                 Download Community Edition
               </a>
               <a
-                href="/docs"
+                href={DOCS_URL}
                 className="inline-flex items-center justify-center rounded-full border border-white/20 px-5 py-2 text-sm font-medium text-white transition hover:border-white/60"
               >
                 Read the Docs

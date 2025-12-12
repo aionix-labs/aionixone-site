@@ -7,11 +7,8 @@
     ],
     "baseUrl": ".",
     "paths": {
-      "@/components/*": [
-        "./components/*"
-      ],
-      "@/content/*": [
-        "./content/*"
+      "@/*": [
+        "./*"
       ]
     },
     "lib": [

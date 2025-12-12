@@ -1,4 +1,5 @@
 import { Button } from '@aionixone/ui';
+import { DOCS_URL } from '@/lib/constants';
 
 export function Hero() {
   return (
@@ -56,7 +57,7 @@ export function Hero() {
           </a>
         </Button>
         <Button asChild variant="ghost">
-          <a href="/docs">Read Documentation</a>
+          <a href={DOCS_URL}>Read Documentation</a>
         </Button>
       </div>
     </section>
