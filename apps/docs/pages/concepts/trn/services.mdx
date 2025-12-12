@@ -1,0 +1,85 @@
+---
+title: Service Reference
+---
+
+# Service-specific TRN Reference
+
+Each AIonixOne service contributes its own kinds and runtime entities. Use this section as the authoritative lookup when defining specs or parsing TRNs.
+
+## Igniter — Event Triggers
+
+- **Service identifier:** `igniter`
+- **Declarative kinds:** `trigger/{source}` where `source` is `cron`, `webhook`, `kafka`, `sqs`, `redis`, `postgres`, etc.
+- **Runtime entities:** `execution/{trigger_name}/{exec_id}`, `dlq/{trigger_name}/{dlq_id}`
+
+```
+trn:igniter:default:trigger/cron/daily-report
+trn:igniter:default:execution/daily-report/exec_abc123
+```
+
+## StepFlow — Workflow Orchestration
+
+- **Service identifier:** `stepflow`
+- **Declarative kind:** `workflow`
+- **Runtime entities:** `execution`, `step`, `task`, `timer`, `event`
+- **Metadata:** `engine`
+
+```
+trn:stepflow:default:workflow/order-pipeline
+trn:stepflow:default:execution/order-pipeline/exec_123
+```
+
+## AIonixFn — Serverless Functions
+
+- **Service identifier:** `aionixfn`
+- **Declarative kind:** `function`
+- **Runtime entities:** `version`, `alias`, `invocation`
+
+```
+trn:aionixfn:default:function/orders/validate
+trn:aionixfn:default:invocation/orders/validate/inv_123
+```
+
+## OpenAct — Connectors & Actions
+
+- **Service identifier:** `openact`
+- **Declarative kinds:** `action/{connector}` & `connection/{type}`
+- **Runtime entity:** `execution/{connector}/{action}/{exec_id}`
+- **Metadata:** `connector/{kind}`
+
+```
+trn:openact:default:action/http/github/list-repos
+trn:openact:default:connection/postgres/main
+```
+
+## CredVault — Credentials & AuthFlow
+
+- **Service identifier:** `credvault`
+- **Declarative kinds:** `credential/{type}`, `authflow/{protocol}`
+- **Runtime entities:** OAuth tokens via `credential/oauth/{provider}/{account_id}`
+
+```
+trn:credvault:default:credential/apiKey/stripe-key
+trn:credvault:default:credential/oauth/google/user_123
+```
+
+## ParamStore — Configuration
+
+- **Service identifier:** `paramstore`
+- **Declarative kinds:** `param/{type}` (`string`, `number`, `bool`, `list`, `json`, `secure`)
+
+```
+trn:paramstore:default:param/string/config/redis/host
+```
+
+## Builtin — Platform Utilities
+
+- **Service identifier:** `builtin`
+- **Tenant:** `system`
+- **Metadata kinds:** `http`, `shell`, `file`, `sleep`, `log`
+
+```
+trn:builtin:system:http
+```
+
+Refer back to the original spec (v1.0) for detailed YAML examples of each credential/parameter type if needed.

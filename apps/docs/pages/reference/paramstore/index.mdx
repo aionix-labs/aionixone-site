@@ -1,0 +1,103 @@
+---
+title: ParamStore
+---
+
+# ParamStore
+
+Hierarchical configuration management with dynamic evaluation and versioning.
+
+## Overview
+
+ParamStore is the configuration layer of AionixOne, providing AWS Parameter Store-like capabilities for managing application configuration with path-based hierarchy and version history.
+
+## TRN Pattern
+
+```
+trn:paramstore:{tenant}:param/{path}
+```
+
+## Key Features
+
+- **Path Hierarchy** — Organize parameters like `/app/db/host`, `/app/db/port`
+- **Multiple Types** — String, number, boolean, JSON, secret reference
+- **Dynamic Evaluation** — Expression evaluation at read time
+- **Versioning** — Full version history with rollback
+- **DSL Integration** — Reference via `$param.{path}` syntax in workflows
+
+## Quick Example
+
+```bash
+# Set parameters
+aio param set /app/config/timeout --value 30
+aio param set /app/db/host --value "localhost"
+aio param set /app/db/port --value 5432 --type number
+
+# Get parameter
+aio param get /app/config/timeout
+
+# List by path prefix
+aio param list /app/db
+
+# Get with history
+aio param history /app/config/timeout
+```
+
+## Parameter Types
+
+| Type | Description | Example |
+|------|-------------|---------|
+| `string` | Text value | `"localhost"` |
+| `number` | Numeric value | `5432` |
+| `boolean` | True/false | `true` |
+| `json` | JSON object/array | `{"key": "value"}` |
+| `secret-ref` | Reference to CredVault | `$secret.db-password` |
+
+## Path Hierarchy
+
+```
+/
+├── app/
+│   ├── config/
+│   │   ├── timeout      = 30
+│   │   └── retries      = 3
+│   └── db/
+│       ├── host         = "localhost"
+│       ├── port         = 5432
+│       └── password     = $secret.db-password
+└── feature-flags/
+    ├── new-ui           = true
+    └── beta-features    = false
+```
+
+## DSL Reference
+
+In StepFlow workflows:
+
+```json
+{
+  "parameters": {
+    "timeout": "{% $param('/app/config/timeout') %}",
+    "dbHost": "{% $param('/app/db/host') %}"
+  }
+}
+```
+
+## API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| PUT | `/api/v1/params/{path}` | Set parameter |
+| GET | `/api/v1/params/{path}` | Get parameter |
+| GET | `/api/v1/params?prefix={path}` | List by prefix |
+| DELETE | `/api/v1/params/{path}` | Delete parameter |
+| GET | `/api/v1/params/{path}/history` | Get version history |
+
+## Reference Pages
+
+- [Path Hierarchy](./hierarchy) — Organizing parameters
+- [Parameter Types](./types) — Type system and validation
+- [HTTP API](./api) — Complete API reference
+
+---
+
+*Documentation in progress. Content will be expanded.*

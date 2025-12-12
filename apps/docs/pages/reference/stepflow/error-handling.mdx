@@ -1,0 +1,286 @@
+---
+title: Error Handling
+---
+
+# Error Handling
+
+StepFlow provides retry policies and catch blocks for robust error handling.
+
+## Retry Policy
+
+Automatically retry failed steps with configurable backoff.
+
+```json
+{
+  "type": "task",
+  "action": "...",
+  "retry": [
+    {
+      "errorEquals": ["NetworkError", "TimeoutError"],
+      "maxAttempts": 3,
+      "intervalSeconds": 2,
+      "backoffRate": 2.0,
+      "maxDelaySeconds": 30
+    },
+    {
+      "errorEquals": ["RateLimitError"],
+      "maxAttempts": 5,
+      "intervalSeconds": 60
+    }
+  ]
+}
+```
+
+### Retry Fields
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `errorEquals` | string[] | Required | Error types to match |
+| `maxAttempts` | integer | 3 | Maximum retry attempts |
+| `intervalSeconds` | integer | 1 | Initial delay between retries |
+| `backoffRate` | number | 2.0 | Multiplier for exponential backoff |
+| `maxDelaySeconds` | integer | - | Maximum delay cap |
+| `jitterStrategy` | string | - | Jitter strategy for backoff |
+
+### Retry Sequence Example
+
+With `intervalSeconds: 2` and `backoffRate: 2.0`:
+
+```
+Attempt 1 → Fail → Wait 2s
+Attempt 2 → Fail → Wait 4s
+Attempt 3 → Fail → Wait 8s
+Attempt 4 → Fail → Error propagates
+```
+
+### Error Matching
+
+Retry policies are evaluated in order. Use `["*"]` to match all errors:
+
+```json
+{
+  "retry": [
+    {
+      "errorEquals": ["TransientError"],
+      "maxAttempts": 5,
+      "intervalSeconds": 1
+    },
+    {
+      "errorEquals": ["*"],
+      "maxAttempts": 2,
+      "intervalSeconds": 5
+    }
+  ]
+}
+```
+
+---
+
+## Catch Policy
+
+Route errors to recovery steps.
+
+```json
+{
+  "type": "task",
+  "action": "...",
+  "catch": [
+    {
+      "errorEquals": ["ValidationError"],
+      "next": "HandleValidation"
+    },
+    {
+      "errorEquals": ["ServiceError", "NetworkError"],
+      "next": "HandleServiceError",
+      "output": {
+        "errorType": "service",
+        "originalInput": "{% input %}"
+      }
+    },
+    {
+      "errorEquals": ["*"],
+      "next": "HandleUnknownError"
+    }
+  ]
+}
+```
+
+### Catch Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `errorEquals` | string[] | Error types to match |
+| `next` | string | Step to transition to |
+| `set` | object | Variables to set (has access to `errorOutput`) |
+| `output` | object | Output mapping (has access to `errorOutput`) |
+
+### Error Output Access
+
+In catch blocks, `errorOutput` contains error details:
+
+```json
+{
+  "catch": [
+    {
+      "errorEquals": ["*"],
+      "next": "ErrorHandler",
+      "set": {
+        "lastError": "{% errorOutput.error %}",
+        "errorCause": "{% errorOutput.cause %}"
+      }
+    }
+  ]
+}
+```
+
+---
+
+## Error Handler Step
+
+Handle errors in a dedicated step:
+
+```json
+{
+  "ErrorHandler": {
+    "type": "set",
+    "set": {
+      "errorCount": "{% $errorCount + 1 %}"
+    },
+    "output": {
+      "success": false,
+      "error": "{% $lastError %}",
+      "cause": "{% $errorCause %}",
+      "retryable": "{% $errorCount < 3 %}"
+    },
+    "next": "DecideRetry"
+  },
+  "DecideRetry": {
+    "type": "router",
+    "routes": [
+      {
+        "condition": "{% input.retryable = true %}",
+        "next": "RetryOperation"
+      }
+    ],
+    "default": "FailWorkflow"
+  }
+}
+```
+
+---
+
+## Retry vs Catch
+
+| Aspect | Retry | Catch |
+|--------|-------|-------|
+| Purpose | Automatic recovery | Manual recovery |
+| Execution | Same step retried | Different step executed |
+| Control | Limited (count, delay) | Full (custom logic) |
+| Use case | Transient failures | Business logic errors |
+
+### Combined Usage
+
+```json
+{
+  "type": "task",
+  "action": "...",
+  "retry": [
+    {
+      "errorEquals": ["NetworkError"],
+      "maxAttempts": 3,
+      "intervalSeconds": 2
+    }
+  ],
+  "catch": [
+    {
+      "errorEquals": ["NetworkError"],
+      "next": "FallbackService"
+    },
+    {
+      "errorEquals": ["ValidationError"],
+      "next": "HandleValidation"
+    }
+  ]
+}
+```
+
+Flow: Retry 3 times → If still fails → Catch routes to fallback.
+
+---
+
+## Complete Example
+
+```json
+{
+  "entry": "CallAPI",
+  "steps": {
+    "CallAPI": {
+      "type": "task",
+      "action": "trn:openact:default:action/http/api:execute",
+      "parameters": {
+        "url": "{% input.apiUrl %}",
+        "method": "POST"
+      },
+      "retry": [
+        {
+          "errorEquals": ["NetworkError", "TimeoutError"],
+          "maxAttempts": 3,
+          "intervalSeconds": 2,
+          "backoffRate": 2.0
+        }
+      ],
+      "catch": [
+        {
+          "errorEquals": ["NetworkError", "TimeoutError"],
+          "next": "HandleRetryExhausted",
+          "set": {
+            "failureReason": "{% errorOutput.error %}"
+          }
+        },
+        {
+          "errorEquals": ["ValidationError"],
+          "next": "HandleValidation"
+        },
+        {
+          "errorEquals": ["*"],
+          "next": "HandleUnknown"
+        }
+      ],
+      "next": "Success"
+    },
+
+    "HandleRetryExhausted": {
+      "type": "set",
+      "output": {
+        "success": false,
+        "error": "API unavailable after retries",
+        "details": "{% $failureReason %}"
+      },
+      "end": true
+    },
+
+    "HandleValidation": {
+      "type": "set",
+      "output": {
+        "success": false,
+        "error": "Invalid request data"
+      },
+      "end": true
+    },
+
+    "HandleUnknown": {
+      "type": "fail",
+      "error": "UnexpectedError",
+      "cause": "{% 'Unexpected error in CallAPI' %}"
+    },
+
+    "Success": {
+      "type": "succeed",
+      "output": {
+        "success": true,
+        "data": "{% input %}"
+      }
+    }
+  }
+}
+```

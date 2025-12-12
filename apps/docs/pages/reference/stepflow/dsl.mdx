@@ -1,0 +1,77 @@
+---
+title: DSL Specification
+---
+
+# StepFlow DSL Specification
+
+The StepFlow DSL (Domain Specific Language) defines workflows as JSON documents with declarative state machines.
+
+## Workflow Structure
+
+```json
+{
+  "description": "Optional workflow description",
+  "version": "1.0",
+  "entry": "FirstStep",
+  "timeoutSeconds": 3600,
+  "steps": {
+    "FirstStep": { ... },
+    "SecondStep": { ... }
+  }
+}
+```
+
+## Top-Level Fields
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `entry` | string | Yes | Name of the first step to execute |
+| `steps` | object | Yes | Map of step name → step definition |
+| `description` | string | No | Human-readable description |
+| `version` | string | No | Workflow version identifier |
+| `timeoutSeconds` | integer | No | Maximum execution time |
+
+## Step Common Fields
+
+All step types share these fields:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `type` | string | Step type: `task`, `set`, `wait`, `router`, `parallel`, `map`, `succeed`, `fail` |
+| `description` | string | Optional step description |
+| `next` | string | Next step name (mutually exclusive with `end`) |
+| `end` | boolean | Marks workflow termination |
+| `set` | object | Variables to set after execution |
+| `output` | object | Output mapping for next step's input |
+
+## Execution Flow
+
+```
+┌─────────┐    ┌─────────┐    ┌─────────┐
+│  Entry  │───▶│  Step   │───▶│  Step   │───▶ End
+│  Step   │    │  (next) │    │  (end)  │
+└─────────┘    └─────────┘    └─────────┘
+```
+
+1. Execution starts at `entry` step
+2. Each step processes, then transitions via `next`
+3. Execution ends when a step has `end: true`
+
+## State Types Overview
+
+| Type | Purpose | Key Fields |
+|------|---------|------------|
+| [task](./states#task) | Execute an action | `action`, `parameters`, `mode` |
+| [set](./states#set) | Set variables without action | `set`, `output` |
+| [wait](./states#wait) | Pause execution | `seconds` or `timestamp` |
+| [router](./states#router) | Conditional branching | `routes`, `default` |
+| [parallel](./states#parallel) | Concurrent branches | `branches`, `maxConcurrency` |
+| [map](./states#map) | Iterate over array | `items`, `itemProcessor` |
+| [succeed](./states#succeed) | Successful termination | `output` |
+| [fail](./states#fail) | Failure termination | `error`, `cause` |
+
+## Next Steps
+
+- See [State Types](./states) for detailed documentation of each type
+- See [Data Mapping](./mapping) for expression syntax
+- See [JSON Schema](./schema) for full schema reference

@@ -1,0 +1,73 @@
+---
+title: Igniter
+---
+
+# Igniter
+
+Event-driven trigger management service for schedule, webhook, and event-based automation.
+
+## Overview
+
+Igniter is the event layer of AionixOne, providing AWS EventBridge-like capabilities for triggering workflows and functions based on schedules, webhooks, or custom events.
+
+## TRN Pattern
+
+```
+trn:igniter:{tenant}:trigger/{name}
+```
+
+## Key Features
+
+- **Schedule Triggers** — Cron-based scheduling with timezone support
+- **Webhook Triggers** — HTTP endpoints that trigger workflows
+- **Event Triggers** — React to internal or external events
+- **Target Routing** — Route to StepFlow workflows or AionixFn functions
+- **Enable/Disable** — Pause triggers without deletion
+
+## Quick Example
+
+```bash
+# Create schedule trigger
+aio tr create daily-report \
+  --type schedule \
+  --cron "0 9 * * *" \
+  --target "trn:stepflow:default:template/generate-report"
+
+# Create webhook trigger
+aio tr create order-webhook \
+  --type webhook \
+  --target "trn:stepflow:default:template/process-order"
+
+# Enable/disable
+aio tr enable daily-report
+aio tr disable daily-report
+```
+
+## Trigger Types
+
+| Type | Description | Configuration |
+|------|-------------|---------------|
+| `schedule` | Time-based execution | `cron`, `timezone` |
+| `webhook` | HTTP endpoint trigger | `path`, `method` |
+| `event` | Event pattern matching | `pattern`, `source` |
+
+## API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/v1/triggers` | Create trigger |
+| GET | `/api/v1/triggers` | List triggers |
+| PUT | `/api/v1/triggers/{name}/enable` | Enable trigger |
+| PUT | `/api/v1/triggers/{name}/disable` | Disable trigger |
+| POST | `/api/v1/webhooks/{path}` | Webhook endpoint |
+
+## Reference Pages
+
+- [Schedule Triggers](./schedule) — Cron scheduling configuration
+- [Webhook Triggers](./webhook) — HTTP webhook setup
+- [Event Triggers](./events) — Event pattern matching
+- [HTTP API](./api) — Complete API reference
+
+---
+
+*Documentation in progress. Content will be expanded.*

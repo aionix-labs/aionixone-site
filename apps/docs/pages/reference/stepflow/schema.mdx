@@ -1,0 +1,339 @@
+---
+title: JSON Schema
+---
+
+# JSON Schema
+
+Complete JSON Schema for StepFlow workflow DSL.
+
+## Schema URL
+
+```
+https://aionix.one/stepflow/workflow-dsl.schema.json
+```
+
+## Usage in Editor
+
+Add to your workflow JSON for IDE validation:
+
+```json
+{
+  "$schema": "https://aionix.one/stepflow/workflow-dsl.schema.json",
+  "entry": "Start",
+  "steps": { ... }
+}
+```
+
+---
+
+## Full Schema
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://aionix.one/stepflow/workflow-dsl.schema.json",
+  "title": "WorkflowDSL",
+  "type": "object",
+  "required": ["entry", "steps"],
+  "properties": {
+    "description": {
+      "type": ["string", "null"],
+      "default": null
+    },
+    "entry": {
+      "description": "Name of the first step to execute",
+      "type": "string"
+    },
+    "steps": {
+      "description": "All steps keyed by step name",
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/Step"
+      }
+    },
+    "timeoutSeconds": {
+      "type": ["integer", "null"],
+      "format": "uint64",
+      "minimum": 0,
+      "default": null
+    },
+    "version": {
+      "type": ["string", "null"],
+      "default": null
+    }
+  },
+  "definitions": {
+    "Step": {
+      "oneOf": [
+        { "$ref": "#/definitions/TaskStep" },
+        { "$ref": "#/definitions/SetStep" },
+        { "$ref": "#/definitions/WaitStep" },
+        { "$ref": "#/definitions/RouterStep" },
+        { "$ref": "#/definitions/SucceedStep" },
+        { "$ref": "#/definitions/FailStep" },
+        { "$ref": "#/definitions/ParallelStep" },
+        { "$ref": "#/definitions/MapStep" }
+      ]
+    },
+    "TaskStep": {
+      "type": "object",
+      "required": ["type", "action"],
+      "properties": {
+        "type": { "const": "task" },
+        "action": { "type": "string" },
+        "mode": { "type": "string", "default": "sync" },
+        "parameters": { "default": null },
+        "credentials": { "default": null },
+        "timeoutSeconds": { "default": null },
+        "heartbeatSeconds": { "default": null },
+        "retry": {
+          "type": ["array", "null"],
+          "items": { "$ref": "#/definitions/RetryPolicy" },
+          "default": null
+        },
+        "catch": {
+          "type": ["array", "null"],
+          "items": { "$ref": "#/definitions/CatchPolicy" },
+          "default": null
+        },
+        "description": { "type": ["string", "null"], "default": null },
+        "set": { "default": null },
+        "output": { "default": null },
+        "next": { "type": ["string", "null"], "default": null },
+        "end": { "type": ["boolean", "null"], "default": null }
+      }
+    },
+    "SetStep": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": { "const": "set" },
+        "description": { "type": ["string", "null"], "default": null },
+        "set": { "default": null },
+        "output": { "default": null },
+        "next": { "type": ["string", "null"], "default": null },
+        "end": { "type": ["boolean", "null"], "default": null }
+      }
+    },
+    "WaitStep": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": { "const": "wait" },
+        "seconds": { "default": null },
+        "timestamp": { "default": null },
+        "description": { "type": ["string", "null"], "default": null },
+        "set": { "default": null },
+        "output": { "default": null },
+        "next": { "type": ["string", "null"], "default": null },
+        "end": { "type": ["boolean", "null"], "default": null }
+      }
+    },
+    "RouterStep": {
+      "type": "object",
+      "required": ["type", "routes"],
+      "properties": {
+        "type": { "const": "router" },
+        "routes": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/RouterRule" }
+        },
+        "default": { "type": ["string", "null"], "default": null },
+        "description": { "type": ["string", "null"], "default": null },
+        "set": { "default": null },
+        "output": { "default": null },
+        "next": { "type": ["string", "null"], "default": null },
+        "end": { "type": ["boolean", "null"], "default": null }
+      }
+    },
+    "SucceedStep": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": { "const": "succeed" },
+        "description": { "type": ["string", "null"], "default": null },
+        "output": { "default": null },
+        "next": { "type": ["string", "null"], "default": null },
+        "end": { "type": ["boolean", "null"], "default": null }
+      }
+    },
+    "FailStep": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": { "const": "fail" },
+        "error": { "default": null },
+        "cause": { "default": null },
+        "description": { "type": ["string", "null"], "default": null },
+        "next": { "type": ["string", "null"], "default": null },
+        "end": { "type": ["boolean", "null"], "default": null }
+      }
+    },
+    "ParallelStep": {
+      "type": "object",
+      "required": ["type", "branches"],
+      "properties": {
+        "type": { "const": "parallel" },
+        "branches": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/Branch" }
+        },
+        "maxConcurrency": {
+          "type": ["integer", "null"],
+          "format": "uint32",
+          "minimum": 0,
+          "default": null
+        },
+        "parameters": { "default": null },
+        "retry": {
+          "type": ["array", "null"],
+          "items": { "$ref": "#/definitions/RetryPolicy" },
+          "default": null
+        },
+        "catch": {
+          "type": ["array", "null"],
+          "items": { "$ref": "#/definitions/CatchPolicy" },
+          "default": null
+        },
+        "description": { "type": ["string", "null"], "default": null },
+        "set": { "default": null },
+        "output": { "default": null },
+        "next": { "type": ["string", "null"], "default": null },
+        "end": { "type": ["boolean", "null"], "default": null }
+      }
+    },
+    "MapStep": {
+      "description": "Iterative state for processing arrays",
+      "type": "object",
+      "required": ["type", "itemProcessor"],
+      "properties": {
+        "type": { "const": "map" },
+        "items": { "default": null },
+        "itemProcessor": { "$ref": "#/definitions/Branch" },
+        "itemSelector": { "default": null },
+        "itemBatcher": { "default": null },
+        "resultWriter": { "default": null },
+        "maxConcurrency": {
+          "type": ["integer", "null"],
+          "format": "uint32",
+          "minimum": 0,
+          "default": null
+        },
+        "toleratedFailureCount": { "default": null },
+        "toleratedFailurePercentage": { "default": null },
+        "retry": {
+          "type": ["array", "null"],
+          "items": { "$ref": "#/definitions/RetryPolicy" },
+          "default": null
+        },
+        "catch": {
+          "type": ["array", "null"],
+          "items": { "$ref": "#/definitions/CatchPolicy" },
+          "default": null
+        },
+        "description": { "type": ["string", "null"], "default": null },
+        "set": { "default": null },
+        "output": { "default": null },
+        "next": { "type": ["string", "null"], "default": null },
+        "end": { "type": ["boolean", "null"], "default": null }
+      }
+    },
+    "Branch": {
+      "type": "object",
+      "required": ["entry", "steps"],
+      "properties": {
+        "entry": { "type": "string" },
+        "steps": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/definitions/Step" }
+        }
+      }
+    },
+    "RetryPolicy": {
+      "type": "object",
+      "required": ["errorEquals"],
+      "properties": {
+        "errorEquals": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "maxAttempts": {
+          "type": ["integer", "null"],
+          "format": "uint32",
+          "minimum": 0,
+          "default": null
+        },
+        "intervalSeconds": {
+          "type": ["integer", "null"],
+          "format": "uint32",
+          "minimum": 0,
+          "default": null
+        },
+        "backoffRate": {
+          "type": ["number", "null"],
+          "format": "double",
+          "default": null
+        },
+        "maxDelaySeconds": {
+          "type": ["integer", "null"],
+          "format": "uint32",
+          "minimum": 0,
+          "default": null
+        },
+        "jitterStrategy": {
+          "type": ["string", "null"],
+          "default": null
+        }
+      }
+    },
+    "CatchPolicy": {
+      "type": "object",
+      "required": ["errorEquals", "next"],
+      "properties": {
+        "errorEquals": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "next": { "type": "string" },
+        "set": { "default": null },
+        "output": { "default": null }
+      }
+    },
+    "RouterRule": {
+      "type": "object",
+      "required": ["condition", "next"],
+      "properties": {
+        "condition": { "type": "string" },
+        "next": { "type": "string" },
+        "set": { "default": null },
+        "output": { "default": null }
+      }
+    }
+  }
+}
+```
+
+---
+
+## Validation
+
+### VS Code
+
+Install JSON Schema extension and add to settings:
+
+```json
+{
+  "json.schemas": [
+    {
+      "fileMatch": ["*.stepflow.json", "*workflow*.json"],
+      "url": "https://aionix.one/stepflow/workflow-dsl.schema.json"
+    }
+  ]
+}
+```
+
+### CLI Validation
+
+```bash
+aio wf validate my-workflow.json
+```

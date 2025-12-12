@@ -1,0 +1,279 @@
+---
+title: Data Mapping
+---
+
+# Data Mapping
+
+StepFlow uses JSONata for all data transformation and mapping expressions.
+
+## Core Principles
+
+### 1. One Root
+
+All expressions execute against `WorkflowContextView`:
+
+```json
+{
+  "input": { },      // Current step's input
+  "vars": { },       // Workflow variables (set via `set`)
+  "global": { },     // Global configuration
+  "context": { },    // Execution metadata
+  "result": { },     // Step execution result (output mapping only)
+  "errorOutput": { } // Error info (catch blocks only)
+}
+```
+
+### 2. Two Primary Entries
+
+Recommended data access paths:
+
+- **`input`** — Current step's business input data
+- **`$varName`** — Workflow variables (set via `set`)
+
+### 3. One Symbol
+
+`$` is used only for:
+- Workflow variables: `$userId`, `$orderTotal`
+- JSONata functions: `$count()`, `$sum()`, `$now()`
+
+**System fields do NOT use `$`:**
+```
+✅ input.userId
+✅ result.data
+✅ context.execution.id
+
+❌ $input.userId
+❌ $result.data
+```
+
+---
+
+## Expression Syntax
+
+```
+{% JSONata expression %}
+```
+
+**Examples:**
+```json
+{
+  "parameters": {
+    "userId": "{% input.user.id %}",
+    "count": "{% $count(input.items) %}",
+    "greeting": "{% 'Hello, ' & input.name %}"
+  }
+}
+```
+
+---
+
+## Literal vs Expression
+
+### Inside Objects/Arrays
+
+Plain strings are literals; use `{% %}` for expressions:
+
+```json
+{
+  "parameters": {
+    "name": "fixed-value",           // Literal
+    "city": "{% input.city %}",      // Expression
+    "count": "{% $count(input.items) %}"
+  }
+}
+```
+
+### Top-Level String Fields
+
+Top-level mapping fields (like `timestamp` in Wait) are treated as expressions:
+
+```json
+{
+  "type": "wait",
+  "timestamp": "{% input.expireAt %}"        // Expression
+}
+```
+
+For a literal string, wrap it as a JSONata string:
+
+```json
+{
+  "type": "wait",
+  "timestamp": "{% \"2024-12-31T23:59:59Z\" %}"  // Literal
+}
+```
+
+---
+
+## Mapping Scenarios
+
+| Scenario | Available Fields | `result` | `errorOutput` |
+|----------|------------------|----------|---------------|
+| `parameters` | `input`, `$vars`, `context` | ❌ | ❌ |
+| `items` (Map) | `input`, `$vars`, `context` | ❌ | ❌ |
+| `set` | `input`, `$vars`, `context` | ✅ | ❌ |
+| `output` | `input`, `$vars`, `context` | ✅ | ❌ |
+| `routes[].condition` | `input`, `$vars`, `context` | ❌ | ❌ |
+| Catch `set`/`output` | `input`, `$vars`, `context` | ❌ | ✅ |
+
+---
+
+## Workflow Variables
+
+### Setting Variables
+
+Use `set` to store values:
+
+```json
+{
+  "type": "task",
+  "action": "...",
+  "set": {
+    "currentUser": "{% result.user %}",
+    "timestamp": "{% $now() %}"
+  }
+}
+```
+
+### Accessing Variables
+
+Reference with `$` prefix:
+
+```json
+{
+  "parameters": {
+    "user": "{% $currentUser %}",
+    "createdAt": "{% $timestamp %}"
+  }
+}
+```
+
+### Variable Scope
+
+Variables are available to all subsequent steps in the workflow.
+
+---
+
+## Result Access
+
+`result` is only available in `set` and `output` mappings (after step execution):
+
+```json
+{
+  "type": "task",
+  "action": "...",
+  "set": {
+    "total": "{% result.sum %}"
+  },
+  "output": {
+    "average": "{% result.sum / result.count %}"
+  }
+}
+```
+
+**Cannot use `result` in `parameters`** — the step hasn't executed yet.
+
+---
+
+## Error Output Access
+
+`errorOutput` is only available in catch blocks:
+
+```json
+{
+  "catch": [
+    {
+      "errorEquals": ["ServiceError"],
+      "next": "HandleError"
+    }
+  ]
+}
+```
+
+```json
+{
+  "name": "HandleError",
+  "type": "set",
+  "set": {
+    "errorMessage": "{% errorOutput.error %}"
+  },
+  "output": {
+    "success": false,
+    "reason": "{% errorOutput.cause %}"
+  }
+}
+```
+
+---
+
+## Map Context
+
+Inside `itemProcessor`, `input` is the current item:
+
+```json
+{
+  "type": "map",
+  "items": "{% input.orders %}",
+  "itemProcessor": {
+    "entry": "ProcessOrder",
+    "steps": {
+      "ProcessOrder": {
+        "type": "task",
+        "parameters": {
+          "orderId": "{% input.id %}",        // input = current item
+          "userId": "{% $userId %}"           // $vars = parent scope
+        }
+      }
+    }
+  }
+}
+```
+
+Access item index via `context.map.item.index`.
+
+---
+
+## Common Errors
+
+### Using `result` in `parameters`
+
+```json
+// ❌ Wrong: result not available yet
+{
+  "parameters": {
+    "data": "{% result.value %}"
+  }
+}
+
+// ✅ Correct: use input or $vars
+{
+  "parameters": {
+    "data": "{% input.value %}"
+  }
+}
+```
+
+### Using `errorOutput` outside catch
+
+```json
+// ❌ Wrong: errorOutput only in catch context
+{
+  "output": {
+    "error": "{% errorOutput.message %}"
+  }
+}
+```
+
+### Map `items` not returning array
+
+```json
+// ❌ Wrong: items must be an array
+{
+  "items": "{% input.singleItem %}"
+}
+
+// ✅ Correct: ensure array
+{
+  "items": "{% [input.singleItem] %}"
+}
+```

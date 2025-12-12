@@ -1,0 +1,45 @@
+---
+title: Versioning & Stability
+---
+
+# Versioning & Stability
+
+- **Current version:** 1.0
+- **Status:** Stable
+
+## Guarantees
+
+| Aspect | Stability | Notes |
+|--------|-----------|-------|
+| TRN format | 🔒 Locked | `trn:{service}:{tenant}:{path}` |
+| Core principles | 🔒 Locked | Kind+Name, isomorphism, multi-tenancy |
+| Existing kinds | 🔒 Locked | All published kinds remain valid |
+| Service IDs | 🔒 Locked | `igniter`, `stepflow`, `aionixfn`, `openact`, etc. |
+
+## Allowed changes (minor/patch)
+
+- Adding new services or resource kinds
+- Parser/validation improvements
+- Documentation or tooling enhancements
+
+## Breaking changes (major only)
+
+- Altering the TRN format or removing service identifiers
+- Changing semantics of existing kinds
+- Violating the isomorphism rule
+
+## Deprecation policy
+
+1. Mark a kind as deprecated in docs/specs
+2. Maintain support for at least two major versions
+3. Provide migration tooling and give ≥6 months notice
+
+## Migration checklist
+
+| Current | Target | Priority |
+|---------|--------|----------|
+| `execution/{exec_id}` | `execution/{trigger}/{exec_id}` | Medium |
+| `dlq/{dlq_id}` | `dlq/{trigger}/{dlq_id}` | Low |
+| `invocation/{inv_id}` | `invocation/{function}/{inv_id}` | Low |
+
+These are implementation-only adjustments and can ship with backward compatibility layers.

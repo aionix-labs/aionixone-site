@@ -1,0 +1,86 @@
+---
+title: CLI Reference
+---
+
+# CLI Reference
+
+The `aio` command-line interface for managing all AionixOne services.
+
+## Installation
+
+```bash
+# Download binary
+curl -L https://releases.aionixone.com/latest/aio -o aio
+chmod +x aio
+
+# Or via package manager (coming soon)
+brew install aionixone/tap/aio
+```
+
+## Global Options
+
+```bash
+aio [command] [flags]
+
+Flags:
+  --output, -o    Output format: table, json, yaml, wide (default: table)
+  --tenant, -t    Tenant name (default: "default")
+  --server, -s    Server URL (default: "http://localhost:53000")
+  --help, -h      Show help
+  --version, -v   Show version
+```
+
+## Command Groups
+
+| Command | Service | Description |
+|---------|---------|-------------|
+| `aio wf` | StepFlow | Workflow management |
+| `aio fn` | AionixFn | Function management |
+| `aio tr` | Igniter | Trigger management |
+| `aio act` | OpenAct | Action execution |
+| `aio sec` | CredVault | Secret management |
+| `aio param` | ParamStore | Parameter management |
+
+## TRN Resolution
+
+Commands accept both full TRN and short names:
+
+```bash
+# Full TRN
+aio wf run trn:stepflow:prod:template/order-flow
+
+# Short name (uses default tenant)
+aio wf run order-flow
+```
+
+## Shell Completion
+
+```bash
+# Bash
+aio completion bash > /etc/bash_completion.d/aio
+
+# Zsh
+aio completion zsh > ~/.zsh/completions/_aio
+
+# Fish
+aio completion fish > ~/.config/fish/completions/aio.fish
+```
+
+## Documentation Export
+
+```bash
+# Export all docs as markdown
+aio docs --format markdown > cli-docs.md
+
+# Export specific command
+aio docs wf --format markdown
+```
+
+## Reference Pages
+
+- [aio wf](./wf) — StepFlow commands
+- [aio fn](./fn) — AionixFn commands
+- [aio tr](./tr) — Igniter commands
+- [aio act](./act) — OpenAct commands
+- [aio sec](./sec) — CredVault commands
+- [aio param](./param) — ParamStore commands

@@ -1,0 +1,65 @@
+---
+title: StepFlow
+---
+
+# StepFlow
+
+Event-driven workflow engine with JSONata mapping, parallel/map execution, and retry/catch semantics.
+
+## Overview
+
+StepFlow is the orchestration layer of AionixOne, providing AWS Step Functions-like capabilities in a local-first runtime. It enables you to define complex workflows as JSON DSL and execute them with full observability.
+
+## TRN Pattern
+
+```
+trn:stepflow:{tenant}:template/{name}
+trn:stepflow:{tenant}:execution/{id}
+```
+
+## Key Features
+
+- **8 State Types** — Task, Set, Wait, Router, Parallel, Map, Succeed, Fail
+- **JSONata Mapping** — Unified `{% expression %}` syntax for data transformation
+- **Error Handling** — Retry policies with backoff, catch blocks for recovery
+- **Execution Modes** — Sync, async, callback
+- **Observability** — Prometheus metrics, execution history, real-time status
+
+## Quick Example
+
+```json
+{
+  "entry": "ProcessOrder",
+  "steps": {
+    "ProcessOrder": {
+      "type": "task",
+      "action": "trn:openact:default:action/http/orders-api:execute",
+      "parameters": {
+        "url": "{% 'https://api.example.com/orders/' & input.orderId %}"
+      },
+      "output": {
+        "orderId": "{% result.id %}"
+      },
+      "next": "NotifyCustomer"
+    },
+    "NotifyCustomer": {
+      "type": "task",
+      "action": "trn:openact:default:action/smtp/send:execute",
+      "parameters": {
+        "to": "{% input.customerEmail %}",
+        "subject": "Order Confirmed"
+      },
+      "end": true
+    }
+  }
+}
+```
+
+## Reference Pages
+
+- [DSL Specification](./dsl) — Complete workflow DSL structure
+- [State Types](./states) — All 8 state types explained
+- [Data Mapping](./mapping) — JSONata expressions and mapping rules
+- [Context & Variables](./context) — WorkflowContextView and `$vars`
+- [Error Handling](./error-handling) — Retry and catch policies
+- [JSON Schema](./schema) — Full DSL schema reference

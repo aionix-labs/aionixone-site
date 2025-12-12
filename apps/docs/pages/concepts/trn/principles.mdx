@@ -1,0 +1,60 @@
+---
+title: Design Principles
+---
+
+# Core Design Principles
+
+The TRN spec enforces four principles so that automation, CLI tooling, and AI systems can reason about any resource without service-specific hacks.
+
+## 1. Kind + Name = Identity
+
+`path = {kind}/{name_path}` — declarative resources are uniquely identified by the combination of kind and name path.
+
+| Component | Description | Examples |
+|-----------|-------------|----------|
+| `kind` | Resource type (with optional subtype) | `trigger/cron`, `workflow`, `credential/apiKey` |
+| `name_path` | Resource name, optionally hierarchical | `daily-report`, `finance/weekly` |
+
+```
+trn:igniter:default:trigger/cron/finance/weekly
+                    └─────────┴──────────────┘
+                       kind      name_path
+```
+
+## 2. Kind Depth = Workspace Depth
+
+Number of segments in `kind` must match the directory depth under the workspace.
+
+| Kind | Depth | Workspace Path |
+|------|-------|----------------|
+| `trigger/cron` | 2 | `trigger/cron/...` |
+| `workflow` | 1 | `workflow/...` |
+| `credential/apiKey` | 2 | `credential/apiKey/...` |
+
+This guards automatic discovery and prevents ambiguous folder structures.
+
+## 3. TRN ⇄ Workspace ⇄ YAML Isomorphism
+
+TRNs, directories, and YAML specs share the same structure:
+
+| Dimension | Format | Example |
+|-----------|--------|---------|
+| TRN | `trn:{service}:{tenant}:{kind}/{name}` | `trn:igniter:default:trigger/cron/daily` |
+| Workspace | `{kind}/{name}/spec.yaml` | `trigger/cron/daily/spec.yaml` |
+| YAML | `kind: {kind}` + `metadata.name: {name}` | `kind: trigger/cron` `name: daily` |
+
+No manifest files are required; the shape alone reveals everything.
+
+## 4. Kind Encodes Type Semantics
+
+The `kind` field already includes type and subtype information—no extra `resource_type` field is needed.
+
+```yaml
+trigger/cron      # type=trigger, subtype=cron
+action/http       # type=action, subtype=http
+credential/apiKey # type=credential, subtype=apiKey
+workflow          # type=workflow
+action            # type=action (subtype in spec)
+```
+
+These principles keep AIonixOne resources predictable and machine-friendly.

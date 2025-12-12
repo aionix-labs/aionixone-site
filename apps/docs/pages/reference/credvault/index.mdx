@@ -1,0 +1,91 @@
+---
+title: CredVault
+---
+
+# CredVault
+
+Secure credential storage with versioning, rotation, and audit logging.
+
+## Overview
+
+CredVault is the security layer of AionixOne, providing AWS Secrets Manager-like capabilities for storing and managing sensitive credentials locally with encryption at rest.
+
+## TRN Pattern
+
+```
+trn:credvault:{tenant}:credential/{name}
+trn:credvault:{tenant}:credential/{name}/version/{version}
+```
+
+## Key Features
+
+- **Multiple Credential Types** — API keys, passwords, certificates, OAuth tokens
+- **Versioning** — Immutable versions with activation/retirement lifecycle
+- **Rotation** — Programmatic rotation with audit logging
+- **Encryption** — AES-256 at rest with master key management
+- **DSL Integration** — Reference via `$secret.{name}` syntax in workflows
+
+## Quick Example
+
+```bash
+# Create secret
+aio sec create db-password --value "super-secret-123"
+
+# Create with type
+aio sec create github-token \
+  --type api-key \
+  --value "ghp_xxxx"
+
+# Reveal (requires confirmation)
+aio sec reveal db-password
+
+# Rotate
+aio sec rotate db-password --value "new-secret-456"
+
+# List versions
+aio sec versions db-password
+```
+
+## Credential Types
+
+| Type | Description | Use Case |
+|------|-------------|----------|
+| `password` | Plain text password | Database credentials |
+| `api-key` | API key or token | Third-party API access |
+| `certificate` | X.509 certificate | TLS/SSL |
+| `oauth-token` | OAuth2 tokens | AuthFlow integration |
+| `key-pair` | Public/private key pair | SSH, signing |
+
+## DSL Reference
+
+In StepFlow workflows:
+
+```json
+{
+  "parameters": {
+    "apiKey": "{% $secret.github-token %}",
+    "dbPassword": "{% $secret.db-password %}"
+  }
+}
+```
+
+## API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/v1/credentials` | Create credential |
+| GET | `/api/v1/credentials/{name}` | Get credential metadata |
+| POST | `/api/v1/credentials/{name}/reveal` | Reveal credential value |
+| POST | `/api/v1/credentials/{name}/rotate` | Rotate credential |
+| GET | `/api/v1/credentials/{name}/versions` | List versions |
+
+## Reference Pages
+
+- [Credential Types](./types) — All credential type documentation
+- [Versioning](./versioning) — Version lifecycle management
+- [Rotation](./rotation) — Rotation strategies and automation
+- [HTTP API](./api) — Complete API reference
+
+---
+
+*Documentation in progress. Content will be expanded.*

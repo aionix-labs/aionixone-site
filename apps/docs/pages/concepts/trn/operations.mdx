@@ -1,0 +1,45 @@
+---
+title: Operations
+---
+
+# Operation Extensions
+
+Operations extend a TRN by appending an action verb. The operation is **not** part of the resource identity—it simply tells executors what to do.
+
+```
+{TRN}:{operation}
+```
+
+| Concept | Description | Example |
+|---------|-------------|---------|
+| TRN | Resource identifier | `trn:stepflow:default:workflow/order` |
+| Operation | Verb | `start`, `invoke`, `execute`, `fire` |
+| Directive | TRN + operation | `trn:stepflow:default:workflow/order:start` |
+
+## Standard operations
+
+| Service | Resource | Operation | Example |
+|---------|----------|-----------|---------|
+| StepFlow | workflow | `start` | `trn:stepflow:default:workflow/order:start` |
+| AIonixFn | function | `invoke` | `trn:aionixfn:default:function/calc:invoke` |
+| OpenAct | action | `execute` | `trn:openact:default:action/http/get:execute` |
+| Igniter | trigger | `fire` | `trn:igniter:default:trigger/cron/daily:fire` |
+
+## In workflow DSL
+
+```yaml
+steps:
+  ProcessOrder:
+    type: task
+    action: "trn:aionixfn:default:function/validate:invoke"
+    parameters:
+      orderId: "{% input.orderId %}"
+    next: Notify
+
+  Notify:
+    type: task
+    action: "trn:openact:default:action/slack/alert:execute"
+    end: true
+```
+
+The base TRN encodes the resource; the suffix selects the runtime operation.

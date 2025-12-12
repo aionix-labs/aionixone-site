@@ -1,0 +1,236 @@
+---
+title: State Types
+---
+
+# State Types
+
+StepFlow supports 8 state types for building workflows.
+
+## Task
+
+Executes an action (HTTP call, function invocation, connector operation).
+
+```json
+{
+  "type": "task",
+  "action": "trn:openact:default:action/http/api-call:execute",
+  "mode": "sync",
+  "parameters": {
+    "url": "{% input.apiUrl %}",
+    "method": "POST",
+    "body": "{% input.payload %}"
+  },
+  "timeoutSeconds": 30,
+  "retry": [...],
+  "catch": [...],
+  "set": {
+    "apiResult": "{% result %}"
+  },
+  "output": {
+    "data": "{% result.body %}"
+  },
+  "next": "NextStep"
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `action` | string | TRN of the action to execute |
+| `mode` | string | Execution mode: `sync` (default), `async`, `callback` |
+| `parameters` | object | Input parameters (supports JSONata) |
+| `timeoutSeconds` | integer | Step timeout |
+| `credentials` | object | Credential reference |
+| `retry` | array | Retry policies |
+| `catch` | array | Error catch policies |
+
+---
+
+## Set
+
+Sets workflow variables without executing an action.
+
+```json
+{
+  "type": "set",
+  "set": {
+    "userId": "{% input.user.id %}",
+    "timestamp": "{% $now() %}"
+  },
+  "output": {
+    "processedAt": "{% $timestamp %}"
+  },
+  "next": "NextStep"
+}
+```
+
+Use `set` to:
+- Extract and store data from previous steps
+- Initialize variables
+- Transform data between steps
+
+---
+
+## Wait
+
+Pauses execution for a duration or until a timestamp.
+
+```json
+{
+  "type": "wait",
+  "seconds": 60,
+  "next": "NextStep"
+}
+```
+
+```json
+{
+  "type": "wait",
+  "timestamp": "{% input.scheduledTime %}",
+  "next": "NextStep"
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `seconds` | integer/expression | Wait duration in seconds |
+| `timestamp` | string/expression | ISO 8601 timestamp to wait until |
+
+---
+
+## Router
+
+Conditional branching based on expressions.
+
+```json
+{
+  "type": "router",
+  "routes": [
+    {
+      "condition": "{% input.status = 'approved' %}",
+      "next": "ProcessApproved"
+    },
+    {
+      "condition": "{% input.status = 'rejected' %}",
+      "next": "ProcessRejected"
+    }
+  ],
+  "default": "HandleUnknown"
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `routes` | array | Ordered list of condition → next pairs |
+| `default` | string | Fallback step if no condition matches |
+
+Routes are evaluated in order; first match wins.
+
+---
+
+## Parallel
+
+Executes multiple branches concurrently.
+
+```json
+{
+  "type": "parallel",
+  "branches": [
+    {
+      "entry": "BranchA_Start",
+      "steps": {
+        "BranchA_Start": { "type": "task", ... , "end": true }
+      }
+    },
+    {
+      "entry": "BranchB_Start",
+      "steps": {
+        "BranchB_Start": { "type": "task", ... , "end": true }
+      }
+    }
+  ],
+  "maxConcurrency": 5,
+  "next": "AggregateResults"
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `branches` | array | List of branch definitions |
+| `maxConcurrency` | integer | Max concurrent branches |
+
+Output is an array of branch results in order.
+
+---
+
+## Map
+
+Iterates over an array, processing each item.
+
+```json
+{
+  "type": "map",
+  "items": "{% input.orders %}",
+  "maxConcurrency": 10,
+  "toleratedFailureCount": 2,
+  "itemProcessor": {
+    "entry": "ProcessItem",
+    "steps": {
+      "ProcessItem": {
+        "type": "task",
+        "action": "...",
+        "parameters": {
+          "orderId": "{% input.id %}",
+          "amount": "{% input.amount %}"
+        },
+        "end": true
+      }
+    }
+  },
+  "next": "Aggregate"
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `items` | expression | JSONata expression returning an array |
+| `itemProcessor` | object | Workflow to run for each item |
+| `maxConcurrency` | integer | Max concurrent iterations |
+| `toleratedFailureCount` | integer | Allowed failures before map fails |
+| `toleratedFailurePercentage` | number | Allowed failure percentage |
+
+**Important:** Inside `itemProcessor`, `input` refers to the current item, not the parent input. Use `$vars` to access parent data.
+
+---
+
+## Succeed
+
+Marks successful workflow completion.
+
+```json
+{
+  "type": "succeed",
+  "output": {
+    "status": "completed",
+    "result": "{% input.finalData %}"
+  }
+}
+```
+
+---
+
+## Fail
+
+Marks workflow failure with error details.
+
+```json
+{
+  "type": "fail",
+  "error": "ValidationError",
+  "cause": "{% 'Invalid input: ' & input.errorMessage %}"
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `error` | string/expression | Error code or name |
+| `cause` | string/expression | Detailed error message |

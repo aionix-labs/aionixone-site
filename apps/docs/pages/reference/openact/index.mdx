@@ -1,0 +1,68 @@
+---
+title: OpenAct
+---
+
+# OpenAct
+
+Unified API execution platform with built-in connectors and OAuth2 authentication.
+
+## Overview
+
+OpenAct is the integration layer of AionixOne, providing a unified interface to execute actions across different services and protocols. It includes built-in connectors for common services and AuthFlow for OAuth2 management.
+
+## TRN Pattern
+
+```
+trn:openact:{tenant}:action/{kind}/{name}
+trn:openact:{tenant}:connection/{kind}/{name}
+```
+
+## Key Features
+
+- **10+ Built-in Connectors** — HTTP, PostgreSQL, MySQL, Redis, Kafka, S3, and more
+- **AuthFlow Engine** — Workflow-based OAuth2 with PKCE, automatic token refresh
+- **Multiple Entry Points** — CLI, REST API, MCP (Model Context Protocol)
+- **Build Optimization** — Selective connector compilation via `connectors.toml`
+
+## Quick Example
+
+```bash
+# Execute HTTP action
+aio act execute http.get \
+  --data '{"url": "https://api.example.com/users"}'
+
+# Test connection
+aio act conn test my-postgres
+
+# List available actions
+aio act list
+```
+
+## Supported Connectors
+
+| Category | Connectors |
+|----------|------------|
+| HTTP | REST APIs, GraphQL, Webhooks |
+| Databases | PostgreSQL, MySQL, SQLite, MongoDB |
+| Message Queues | Kafka, Redis Pub/Sub, RabbitMQ |
+| Storage | S3, MinIO, Local filesystem |
+| Communication | SMTP, Slack, Discord |
+
+## API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/v1/actions/{kind}/{name}/execute` | Execute action |
+| GET | `/api/v1/actions` | List available actions |
+| POST | `/api/v1/connections` | Create connection |
+| POST | `/api/v1/connections/{name}/test` | Test connection |
+
+## Reference Pages
+
+- [Built-in Connectors](./connectors) — All connector documentation
+- [AuthFlow (OAuth2)](./authflow) — OAuth2 configuration and flow
+- [HTTP API](./api) — Complete API reference
+
+---
+
+*Documentation in progress. Content will be expanded.*

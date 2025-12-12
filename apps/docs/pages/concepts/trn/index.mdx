@@ -1,0 +1,31 @@
+---
+title: TRN Overview
+---
+
+# Tenant Resource Name (TRN)
+
+The **Tenant Resource Name** is AIonixOne's platform-wide addressing scheme. It standardizes how workflows, functions, triggers, connectors, secrets, and parameters refer to each other while preserving tenant isolation.
+
+- **Version:** 1.0
+- **Status:** Stable
+- **Last Update:** 2025-12-09
+- **Authors:** AIonixOne Platform Team
+
+## Why TRN exists
+
+- Consistent resource naming across all services
+- No manifest files or custom discovery logic—workspace paths, TRN strings, and YAML specs mirror each other
+- Built-in tenant field and explicit kind/name semantics make automation and AI tooling reliable
+
+## How to read this spec
+
+- [Basic format](./format) — the raw syntax and constraints
+- [Design principles](./principles) — why kind/name depth and isomorphism matter
+- [Resource classes](./classification) — declarative vs runtime vs metadata
+- [Operations](./operations) — extending TRNs for workflow DSLs
+- [Service reference](./services) — per-service kinds and runtime entities
+- [Implementation](./implementation) — parsing/building helpers, workspace rules
+- [Versioning](./versioning) — stability guarantees and evolution policy
+- [Appendices](./appendix) — comparisons and reference tables
+
+Use this overview as the navigation hub as you migrate documents from the legacy single Markdown file.

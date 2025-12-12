@@ -1,0 +1,63 @@
+---
+title: Implementation Guidelines
+---
+
+# Implementation Guidelines
+
+## Parsing TRNs
+
+```rust
+use aionix_protocol::trn::Trn;
+
+let trn = Trn::parse("trn:igniter:default:trigger/cron/daily")?;
+assert_eq!(trn.service(), "igniter");
+assert_eq!(trn.tenant(), "default");
+```
+
+Service helpers interpret kinds:
+
+```rust
+use aionix_contracts::core::trn::service_builders::IgniterTrn;
+let (kind, name) = IgniterTrn::parse_kind_and_name(&trn)?;
+```
+
+## Building TRNs
+
+```rust
+// Declarative
+let trn = IgniterTrn::from_kind_and_name("default", "trigger/cron", "daily-report")?;
+// Runtime
+aionixfn::Trn::invocation("default", "process-order", "inv_123");
+stepflow::Trn::execution("default", "order-pipeline", "exec_456");
+```
+
+## Workspace structure
+
+```
+workspace/
+├── trigger/cron/daily-report/spec.yaml
+├── workflow/order-pipeline/spec.yaml
+└── function/process-order/spec.yaml
+```
+
+Rule of thumb: `{kind}/{name_path}/spec.yaml → trn:{service}:{tenant}:{kind}/{name_path}`.
+
+## Validation helpers
+
+```rust
+pub fn validate_trn(trn: &str) -> Result<(), TrnError> {
+    let parts: Vec<&str> = trn.split(':').collect();
+    if parts.len() != 4 || parts[0] != "trn" {
+        return Err(TrnError::InvalidFormat);
+    }
+    validate_service(parts[1])?;
+    validate_tenant(parts[2])?;
+    validate_path(parts[3])?;
+    if trn.len() > 512 {
+        return Err(TrnError::TooLong);
+    }
+    Ok(())
+}
+```
+
+Enforce kind depth = path depth when walking workspaces to catch mismatches early.

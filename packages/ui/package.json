@@ -1,0 +1,19 @@
+{
+  "name": "@aionixone/ui",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "src/index.ts",
+  "module": "src/index.ts",
+  "exports": {
+    ".": {
+      "import": "./src/index.ts"
+    }
+  },
+  "dependencies": {
+    "clsx": "^2.1.0"
+  },
+  "peerDependencies": {
+    "react": ">=18",
+    "react-dom": ">=18"
+  }
+}

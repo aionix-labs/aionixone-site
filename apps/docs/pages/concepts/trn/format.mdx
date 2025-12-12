@@ -1,0 +1,36 @@
+---
+title: Basic Format
+---
+
+# TRN Basic Format
+
+Every AIonixOne resource is addressed with the following syntax:
+
+```
+trn:{service}:{tenant}:{path}
+```
+
+## Components
+
+| Component | Description | Examples |
+|-----------|-------------|----------|
+| `service` | Service identifier | `igniter`, `stepflow`, `aionixfn`, `openact` |
+| `tenant` | Tenant or namespace | `default`, `prod`, `company-a` |
+| `path` | Resource path (`{kind}/{name_path}`) | `trigger/cron/daily-report`, `function/process-order` |
+
+## Examples
+
+```
+trn:igniter:default:trigger/cron/daily-report
+trn:stepflow:prod:workflow/order-pipeline
+trn:aionixfn:default:function/process-order
+trn:openact:default:action/http/send-request
+```
+
+## Constraints
+
+- Character set: `[a-z0-9-_/]` (lowercase preferred)
+- Case: case-insensitive but stored as lowercase for consistency
+- Length limits: service 1–32 chars, tenant 1–64, path 1–256, whole TRN ≤ 512
+
+Keep TRNs short and descriptive—services and tooling assume these limits when storing or validating resources.

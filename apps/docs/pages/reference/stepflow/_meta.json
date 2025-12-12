@@ -1,0 +1,9 @@
+{
+  "index": "Overview",
+  "dsl": "DSL Specification",
+  "states": "State Types",
+  "mapping": "Data Mapping",
+  "context": "Context & Variables",
+  "error-handling": "Error Handling",
+  "schema": "JSON Schema"
+}

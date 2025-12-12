@@ -1,0 +1,118 @@
+---
+title: Appendices
+---
+
+# Appendices
+
+## Industry comparisons
+
+### AWS ARN
+
+```
+arn:aws:lambda:us-east-1:123456789012:function:my-function
+```
+
+| Aspect | AWS ARN | AIonixOne TRN |
+|--------|---------|---------------|
+| Segments | 7 | 4 |
+| Multi-tenancy | Account ID | Tenant field |
+| Hierarchy | Flat | Kind/name path |
+
+### Kubernetes resource path
+
+```
+/apis/apps/v1/namespaces/default/deployments/my-app
+```
+
+| Aspect | Kubernetes | AIonixOne TRN |
+|--------|------------|---------------|
+| Resource type | Fixed collections | Dynamic kinds |
+| Versioning | Part of path | In spec metadata |
+| Format | REST path | URI-like string |
+
+### GCP resource naming
+
+```
+projects/my-project/locations/us/functions/my-function
+```
+
+| Aspect | GCP | AIonixOne TRN |
+|--------|-----|---------------|
+| Format | REST path | URI-like |
+| Hierarchy | Collection nesting | Kind/name pairing |
+
+## Kind depth summary
+
+| Service | Kind | Depth | Workspace Path |
+|---------|------|-------|----------------|
+| Igniter | `trigger/{source}` | 2 | `trigger/{source}/...` |
+| StepFlow | `workflow` | 1 | `workflow/...` |
+| AIonixFn | `function` | 1 | `function/...` |
+| CredVault | `credential/{type}` | 2 | `credential/{type}/...` |
+| ParamStore | `param/{type}` | 2 | `param/{type}/...` |
+| OpenAct | `action/{connector}` | 2 | `action/{connector}/...` |
+| OpenAct | `connection/{type}` | 2 | `connection/{type}/...` |
+
+## Complete examples
+
+### Cron trigger → workflow
+
+```
+trn:igniter:default:trigger/cron/daily-sales-report
+trigger/cron/daily-sales-report/spec.yaml
+```
+
+```yaml
+kind: trigger/cron
+metadata:
+  name: daily-sales-report
+spec:
+  schedule: "0 9 * * * *"
+  action:
+    type: workflow
+    target: "trn:stepflow:default:workflow/sales-report:start"
+```
+
+### Serverless function
+
+```
+trn:aionixfn:default:function/orders/validate
+function/orders/validate/spec.yaml
+```
+
+```yaml
+kind: function
+metadata:
+  name: orders/validate
+spec:
+  runtime: python3.11
+  handler: main.handler
+  env:
+    - name: API_KEY
+      valueFrom:
+        secretRef: "trn:credvault:default:credential/apiKey/payment-gateway"
+```
+
+### HTTP action
+
+```
+trn:openact:default:action/http/github/list-repos
+```
+
+```yaml
+kind: action/http
+metadata:
+  name: github/list-repos
+spec:
+  connectionRef: "trn:openact:default:connection/http/github-api"
+  method: GET
+  path: "/users/{{username}}/repos"
+```
+
+### Workflow snippet
+
+```
+trn:stepflow:default:workflow/order-fulfillment
+```
+
+Workflow DSL uses TRNs for every external call, ensuring traceability from execution metrics back to declarative assets.

@@ -1,0 +1,76 @@
+---
+title: AionixOne Documentation
+---
+
+# AionixOne
+
+**The Control Plane for Local Execution**
+
+AionixOne is a governance layer that brings order to scripts, functions, schedules, and automation running outside the cloud. It enforces one simple rule:
+
+> **Anything that can execute must be governed.**
+
+## Core Concepts
+
+### TRN — Tenant Resource Name
+
+Every object in AionixOne has a TRN. No TRN means it doesn't exist.
+
+```
+trn:<service>:<tenant>:<type>/<name>
+```
+
+- All objects must have a TRN
+- All actions are TRN + Operation
+- All executions generate a traceable record
+
+[Learn more about TRN →](./concepts/trn)
+
+### Six Integrated Services
+
+| Service | Purpose | TRN Prefix |
+|---------|---------|------------|
+| **StepFlow** | Workflow orchestration | `trn:stepflow:` |
+| **AionixFn** | Serverless functions | `trn:aionixfn:` |
+| **Igniter** | Event triggers | `trn:igniter:` |
+| **OpenAct** | External connectors | `trn:openact:` |
+| **CredVault** | Secret management | `trn:credvault:` |
+| **ParamStore** | Configuration parameters | `trn:paramstore:` |
+
+## Quick Start
+
+```bash
+# Download and run
+./aionix --port 53000
+
+# Deploy a function
+aio fn deploy my-func -f handler.py
+
+# Create a workflow
+aio wf create my-workflow --dsl workflow.json
+
+# Run it
+aio wf run my-workflow --data '{"key": "value"}'
+```
+
+## What You Get
+
+- **Traceable** — Every execution has a source, context, and history
+- **Governed** — Objects must be registered to exist
+- **Transferable** — System state doesn't depend on human memory
+
+## Deployment
+
+Single binary. No cloud required. No agents. No rewriting your existing code.
+
+```bash
+# That's it
+./aionix --port 53000
+```
+
+## Next Steps
+
+- [TRN Specification](./concepts/trn) — Understand the addressing scheme
+- [Platform Spec](./concepts/platform-spec) — Full architecture breakdown
+- [Reference](./reference) — API documentation for all six services
+- [Tooling](./tooling) — CLI, Studio, and VS Code extension

@@ -1,0 +1,67 @@
+---
+title: Platform Specification
+---
+
+# Platform Specification
+
+AionixOne is the control plane for local execution — a governance layer that unifies scripts, functions, schedules, and automation into a single, traceable system.
+
+## The Rule
+
+> **Anything that can execute must be governed.**
+
+This is enforced through:
+
+1. **TRN (Tenant Resource Name)** — Every object has a unique identifier
+2. **Unified Operations** — All actions follow the same pattern: TRN + Operation
+3. **Execution Records** — Every execution generates a traceable record
+
+## Architecture
+
+Single Rust binary bundling six integrated services:
+
+| Service | Responsibility |
+|---------|----------------|
+| **StepFlow** | Workflow orchestration with JSON DSL |
+| **AionixFn** | Serverless function execution (Python, Deno) |
+| **Igniter** | Event triggers (cron, webhook, Kafka, etc.) |
+| **OpenAct** | External connectors (databases, APIs, MCP) |
+| **CredVault** | Encrypted secret management |
+| **ParamStore** | Hierarchical configuration parameters |
+
+## Deployment Model
+
+- **Single binary** — No runtime dependencies
+- **Embedded SQLite** — Instant, fully offline deployments
+- **Unified API** — One surface for CLI, Studio, and VS Code
+
+## Key Principles
+
+### Everything Has a TRN
+
+```
+trn:<service>:<tenant>:<type>/<name>
+```
+
+No TRN means it doesn't exist in the system.
+
+### Everything is Traceable
+
+Every execution generates:
+- Unique execution ID
+- Input/output snapshots
+- Step-by-step event log
+- Duration and status
+
+### Everything is Transferable
+
+System state doesn't depend on:
+- Human memory
+- Excel spreadsheets
+- Tribal knowledge
+
+## Resources
+
+- [TRN Specification](./trn) — Deep dive into addressing
+- [Reference Documentation](/reference) — API docs for all services
+- [Full Markdown Spec](https://github.com/aionixone/aionixone-site/blob/main/PLATFORM_SPEC.md) — Complete specification

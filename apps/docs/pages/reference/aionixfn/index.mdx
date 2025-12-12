@@ -1,0 +1,65 @@
+---
+title: AionixFn
+---
+
+# AionixFn
+
+Multi-runtime serverless function platform with version management and traffic routing.
+
+## Overview
+
+AionixFn is the compute layer of AionixOne, providing AWS Lambda-like capabilities for running serverless functions locally. It supports multiple runtimes and sophisticated deployment strategies.
+
+## TRN Pattern
+
+```
+trn:aionixfn:{tenant}:function/{name}
+trn:aionixfn:{tenant}:function/{name}/version/{version}
+trn:aionixfn:{tenant}:function/{name}/alias/{alias}
+```
+
+## Key Features
+
+- **Multi-Runtime** — Python 3.11+, Deno (TypeScript/JavaScript)
+- **Version Management** — Immutable versions with rollback support
+- **Alias System** — Named references to specific versions
+- **Traffic Routing** — A/B testing, canary deployments via traffic weights
+- **Resource Isolation** — CPU/memory limits via rlimit
+- **Observability** — Execution logs, function metrics, audit trail
+
+## Quick Example
+
+```bash
+# Create function
+aio fn create process-order --runtime python3.11
+
+# Deploy version
+aio fn deploy process-order --code ./handler.py
+
+# Create alias
+aio fn alias create process-order prod --version 1
+
+# Invoke
+aio fn invoke process-order --data '{"orderId": "123"}'
+```
+
+## API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/v1/functions` | Create function |
+| POST | `/api/v1/functions/{name}/versions` | Register version |
+| POST | `/api/v1/functions/{name}/invoke` | Invoke function |
+| POST | `/api/v1/functions/{name}/aliases/{alias}/traffic` | Configure traffic |
+| GET | `/api/v1/functions/{name}/logs` | Get execution logs |
+
+## Reference Pages
+
+- [Runtimes](./runtimes) — Supported runtimes and configuration
+- [Version Management](./versions) — Version lifecycle and rollback
+- [Aliases & Traffic](./aliases) — Traffic routing and deployment strategies
+- [HTTP API](./api) — Complete API reference
+
+---
+
+*Documentation in progress. Content will be expanded.*

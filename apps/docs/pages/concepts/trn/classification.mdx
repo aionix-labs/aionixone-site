@@ -1,0 +1,75 @@
+---
+title: Resource Classes
+---
+
+# Resource Classification
+
+TRNs cover three categories: declarative resources, runtime entities, and metadata. Each carries a different path contract.
+
+## Overview
+
+| Category | Description | Path Pattern | Builder Trait |
+|----------|-------------|--------------|---------------|
+| Declarative | User-authored YAML specs | `{kind}/{name_path}` | `DeclarativeTrnBuilder` |
+| Runtime | System-generated during execution | `{type}/{parent_path}/{id}` | Service helpers |
+| Metadata | Platform-provided descriptors | `{type}` or `{type}/{id}` | Service helpers |
+
+## Declarative resources
+
+```
+{kind}/{name_path}
+```
+
+```
+trn:igniter:default:trigger/cron/daily-report
+trn:stepflow:default:workflow/order-pipeline
+trn:aionixfn:default:function/process-order
+```
+
+Example YAML:
+
+```yaml
+kind: trigger/cron
+metadata:
+  name: daily-report
+  description: "Daily sales report"
+  labels:
+    team: analytics
+spec:
+  schedule: "0 9 * * *"
+  timezone: "America/New_York"
+  action:
+    type: workflow
+    target: "trn:stepflow:default:workflow/sales-report:start"
+```
+
+## Runtime entities
+
+```
+{entity_type}/{parent_name_path}/{entity_id}
+```
+
+Provide context for debugging and execution graphs:
+
+| Entity | Path Pattern | Example |
+|--------|--------------|---------|
+| Workflow execution | `execution/{workflow}/{exec_id}` | `execution/order-pipeline/exec_2025` |
+| Step state | `step/{workflow}/{exec_id}/{step}` | `step/order-pipeline/exec_2025/init` |
+| Trigger execution | `execution/{trigger}/{exec_id}` | `execution/daily-report/exec_abc` |
+| Function invocation | `invocation/{function}/{inv_id}` | `invocation/process-order/inv_xyz` |
+
+## Metadata resources
+
+Singletons or system descriptors:
+
+```
+{type}  or  {type}/{id}
+```
+
+Examples:
+
+```
+trn:stepflow:default:engine
+trn:openact:default:connector/http
+trn:builtin:system:http
+```

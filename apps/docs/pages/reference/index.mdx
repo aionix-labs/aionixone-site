@@ -1,0 +1,40 @@
+---
+title: Reference
+---
+
+# Reference
+
+Complete technical specifications for all AionixOne services.
+
+## Core Services
+
+| Service | Category | Description | Cloud Equivalent |
+|---------|----------|-------------|------------------|
+| [StepFlow](./stepflow) | Orchestration | Event-driven workflow engine with JSONata mapping | AWS Step Functions |
+| [AionixFn](./aionixfn) | Compute | Multi-runtime serverless functions (Python, Deno) | AWS Lambda |
+| [Igniter](./igniter) | Events | Trigger management (schedule, webhook, event) | AWS EventBridge |
+| [OpenAct](./openact) | Integration | Unified connector platform with OAuth2 | API Gateway |
+| [CredVault](./credvault) | Security | Secure credential storage with versioning | AWS Secrets Manager |
+| [ParamStore](./paramstore) | Configuration | Hierarchical parameter management | AWS Parameter Store |
+
+## Developer Tools
+
+- [CLI Reference](./cli) — `aio` command-line interface
+- [TRN Specification](./trn) — Tenant Resource Name format
+
+## TRN Patterns
+
+All resources follow the TRN (Tenant Resource Name) pattern:
+
+```
+trn:{service}:{tenant}:{resource_type}/{resource_path}
+```
+
+| Service | Example TRN |
+|---------|-------------|
+| StepFlow | `trn:stepflow:prod:template/order-flow` |
+| AionixFn | `trn:aionixfn:prod:function/process-payment` |
+| Igniter | `trn:igniter:prod:trigger/daily-report` |
+| OpenAct | `trn:openact:prod:connection/http/github-api` |
+| CredVault | `trn:credvault:prod:credential/db-password` |
+| ParamStore | `trn:paramstore:prod:param/app/config/timeout` |
