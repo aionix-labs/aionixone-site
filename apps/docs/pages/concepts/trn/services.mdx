@@ -82,4 +82,21 @@ trn:paramstore:default:param/string/config/redis/host
 trn:builtin:system:http
 ```
 
+## Auth — Authorization Service
+
+- **Service identifier:** `auth`
+- **Declarative kinds:** `key`, `policy`
+- **Purpose:** API keys and ABAC (Attribute-Based Access Control) policies
+
+```
+trn:auth:default:key/ak_JBsp2nuFgPl4
+trn:auth:default:policy/admin:alice
+trn:auth:prod:key/ak_prod_xyz123
+```
+
+**Security Notes:**
+- Auth resources are protected by the same ABAC system they manage
+- API key secrets are never stored; only SHA256 hashes are persisted
+- Builtin policies (prefixed with `builtin:`) cannot be modified or deleted
+
 Refer back to the original spec (v1.0) for detailed YAML examples of each credential/parameter type if needed.
