@@ -25,13 +25,11 @@ export function GovernanceRules() {
               <div className="mt-4 overflow-x-auto rounded-xl border border-white/10 bg-black/40 p-4">
                 <pre className="font-mono text-sm">
                   <span className="text-white/50">trn:</span>
-                  <span className="text-cyan-400">&lt;service&gt;</span>
+                  <span className="text-cyan-400">&#123;service&#125;</span>
                   <span className="text-white/50">:</span>
-                  <span className="text-purple-400">&lt;tenant&gt;</span>
+                  <span className="text-purple-400">&#123;tenant&#125;</span>
                   <span className="text-white/50">:</span>
-                  <span className="text-yellow-400">&lt;type&gt;</span>
-                  <span className="text-white/50">/</span>
-                  <span className="text-green-400">&lt;name&gt;</span>
+                  <span className="text-green-400">&#123;path&#125;</span>
                 </pre>
               </div>
             </div>
@@ -51,17 +49,17 @@ export function GovernanceRules() {
               </p>
               <div className="mt-4 space-y-2 overflow-x-auto rounded-xl border border-white/10 bg-black/40 p-4 font-mono text-sm">
                 <div>
-                  <span className="text-white/60">trn:stepflow:acme:wf/daily-report</span>
+                  <span className="text-white/60">trn:stepflow:default:workflow/order-pipeline</span>
                   <span className="text-white/30"> → </span>
                   <span className="text-cyan-400">RUN</span>
                 </div>
                 <div>
-                  <span className="text-white/60">trn:aionixfn:acme:fn/cleanup</span>
+                  <span className="text-white/60">trn:aionixfn:default:function/orders/validate</span>
                   <span className="text-white/30"> → </span>
                   <span className="text-purple-400">INVOKE</span>
                 </div>
                 <div>
-                  <span className="text-white/60">trn:credvault:acme:secret/api-key</span>
+                  <span className="text-white/60">trn:credvault:default:credential/apiKey/stripe-key</span>
                   <span className="text-white/30"> → </span>
                   <span className="text-green-400">READ</span>
                 </div>
@@ -85,7 +83,7 @@ export function GovernanceRules() {
                 <pre className="font-mono text-sm text-white/80">
 {`{
   "execution_id": "exec_a1b2c3",
-  "trn": "trn:stepflow:acme:wf/daily-report",
+  "trn": "trn:stepflow:default:workflow/order-pipeline",
   "started_at": "2025-01-15T09:00:00Z",
   "duration_ms": 3420,
   "status": "completed",

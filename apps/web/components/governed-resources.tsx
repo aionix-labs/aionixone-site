@@ -5,42 +5,42 @@ const resources = [
     name: 'Functions',
     icon: 'λ',
     description: 'Python and Deno functions with isolated execution',
-    trn: 'trn:aionixfn:acme:fn/process-order',
+    trn: 'trn:aionixfn:default:function/orders/validate',
     color: 'cyan'
   },
   {
     name: 'Workflows',
     icon: '⎇',
     description: 'Multi-step orchestration with JSON DSL',
-    trn: 'trn:stepflow:acme:wf/daily-report',
+    trn: 'trn:stepflow:default:workflow/order-pipeline',
     color: 'purple'
   },
   {
     name: 'Triggers',
     icon: '⚡',
     description: 'Cron schedules, webhooks, and event sources',
-    trn: 'trn:igniter:acme:trigger/every-hour',
+    trn: 'trn:igniter:default:trigger/cron/daily-report',
     color: 'yellow'
   },
   {
     name: 'Connectors',
     icon: '⌁',
     description: 'Database, API, and MCP integrations',
-    trn: 'trn:openact:acme:conn/postgres-main',
+    trn: 'trn:openact:default:connection/postgres/main',
     color: 'green'
   },
   {
     name: 'Secrets',
     icon: '🔐',
     description: 'Encrypted credentials with scoped access',
-    trn: 'trn:credvault:acme:secret/api-key',
+    trn: 'trn:credvault:default:credential/apiKey/stripe-key',
     color: 'red'
   },
   {
     name: 'Parameters',
     icon: '⚙',
     description: 'Hierarchical configuration values',
-    trn: 'trn:paramstore:acme:param/batch-size',
+    trn: 'trn:paramstore:default:param/string/batch-size',
     color: 'blue'
   }
 ];

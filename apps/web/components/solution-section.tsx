@@ -60,7 +60,7 @@ export function SolutionSection() {
       <div className="mt-12 text-center">
         <div className="inline-block rounded-xl border border-white/10 bg-black/40 px-6 py-4">
           <code className="font-mono text-cyan-400">
-            trn:&lt;service&gt;:&lt;tenant&gt;:&lt;type&gt;/&lt;name&gt;
+            trn:&#123;service&#125;:&#123;tenant&#125;:&#123;path&#125;
           </code>
         </div>
       </div>
