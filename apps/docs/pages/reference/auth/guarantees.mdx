@@ -1,0 +1,179 @@
+---
+title: Guarantees
+---
+
+# System Guarantees
+
+The Auth service provides formal guarantees about security behavior. These guarantees are tested continuously and verified through adversarial testing.
+
+---
+
+## Authentication Guarantees
+
+### G1: No Anonymous Access
+
+**Guarantee**: Every API request must include a valid API key. Requests without authentication are rejected with `401 Unauthorized`.
+
+```
+Request without X-API-Key or Authorization header
+→ 401 Unauthorized
+→ {"error": {"code": "UNAUTHORIZED", "message": "Authentication required"}}
+```
+
+### G2: Key Verification
+
+**Guarantee**: API keys are verified using SHA256 hash comparison. Invalid keys (wrong format, non-existent, or incorrect secret) are rejected.
+
+```
+Request with invalid API key
+→ 401 Unauthorized
+→ {"error": {"code": "UNAUTHORIZED", "message": "Authentication required"}}
+```
+
+### G3: Principal Binding
+
+**Guarantee**: Each API key is bound to exactly one principal. The principal cannot be changed after key creation.
+
+```
+API Key ak_xxx → Principal user:alice (immutable)
+```
+
+---
+
+## Authorization Guarantees
+
+### G4: Default Deny
+
+**Guarantee**: If no policy explicitly allows an action, the request is denied. There is no implicit access.
+
+```
+Request with valid key but no matching allow policy
+→ 403 Forbidden
+→ {"error": {"code": "FORBIDDEN", "message": "Access denied"}}
+```
+
+### G5: Policy Precedence
+
+**Guarantee**: Policies are evaluated by priority (highest first). The first matching policy determines the outcome.
+
+```
+Priority 1000: deny  → DENY (wins)
+Priority 100:  allow → (not evaluated)
+Priority 10:   allow → (not evaluated)
+```
+
+### G6: Deny Overrides
+
+**Guarantee**: An explicit `deny` policy can override any `allow` policy if it has equal or higher priority.
+
+```
+// Deny policy (priority: 100)
+{ "effect": "deny", "actions": ["delete"], "priority": 100 }
+
+// Allow policy (priority: 50)
+{ "effect": "allow", "actions": ["delete"], "priority": 50 }
+
+Result: DENY (deny policy has higher priority)
+```
+
+---
+
+## Resource Guarantees
+
+### G7: TRN Uniqueness
+
+**Guarantee**: Every resource has exactly one TRN. No two resources share the same TRN.
+
+```
+trn:aionixfn:default:function/hello → Unique function resource
+trn:auth:default:key/ak_xxx → Unique API key resource
+```
+
+### G8: Workspace Isolation
+
+**Guarantee**: Resources in different workspaces are isolated. A policy for workspace A cannot grant access to workspace B unless explicitly specified.
+
+```
+Policy: resources: ["trn:*:prod:*"]
+→ Can access: trn:aionixfn:prod:function/hello
+→ Cannot access: trn:aionixfn:staging:function/hello
+```
+
+---
+
+## Security Guarantees
+
+### G9: No Header Injection
+
+**Guarantee**: The system ignores `X-Principal` headers in requests. Principal identity is derived only from the API key.
+
+```
+Request with:
+  X-API-Key: (bob's key)
+  X-Principal: user:alice  ← IGNORED
+
+Result: Principal is user:bob (from API key)
+```
+
+### G10: Secrets Never Stored
+
+**Guarantee**: API key secrets are never stored in plaintext. Only SHA256 hashes are persisted.
+
+```
+Key creation:
+  Secret: vZqNKeyoJp2qNXrZm1H2q6OQTIheeAps
+  Stored: SHA256(secret) = 8f14e45f...
+```
+
+### G11: Instant Revocation
+
+**Guarantee**: Disabling an API key takes effect immediately. No grace period, no cached sessions.
+
+```
+1. Disable key ak_xxx
+2. Next request with ak_xxx
+→ 401 Unauthorized (immediate)
+```
+
+---
+
+## Availability Guarantees
+
+### G12: Stateless Evaluation
+
+**Guarantee**: Policy evaluation is stateless. Each request is evaluated independently using only the current policy set.
+
+```
+Request 1: Evaluate with current policies
+Request 2: Evaluate with current policies (independent)
+```
+
+### G13: No External Dependencies
+
+**Guarantee**: Authentication and authorization do not depend on external services. The Auth service operates independently.
+
+---
+
+## Guarantee Matrix
+
+| ID | Guarantee | Category | Testable |
+|----|-----------|----------|----------|
+| G1 | No anonymous access | Auth | Yes |
+| G2 | Key verification | Auth | Yes |
+| G3 | Principal binding | Auth | Yes |
+| G4 | Default deny | Authz | Yes |
+| G5 | Policy precedence | Authz | Yes |
+| G6 | Deny overrides | Authz | Yes |
+| G7 | TRN uniqueness | Resource | Yes |
+| G8 | Workspace isolation | Resource | Yes |
+| G9 | No header injection | Security | Yes |
+| G10 | Secrets never stored | Security | Audit |
+| G11 | Instant revocation | Security | Yes |
+| G12 | Stateless evaluation | Availability | Yes |
+| G13 | No external deps | Availability | Audit |
+
+---
+
+## Formal Verification
+
+These guarantees are not just documented — they are **tested**. See [Verification](./verification) for detailed test results from adversarial testing.

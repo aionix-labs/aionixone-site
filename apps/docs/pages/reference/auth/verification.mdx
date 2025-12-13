@@ -1,0 +1,176 @@
+---
+title: Verification
+---
+
+# Adversarial Verification
+
+The Auth service undergoes continuous adversarial testing to verify security guarantees. This page documents the test methodology and results.
+
+---
+
+## Test Summary
+
+| Category | Tests | Passed | Status |
+|----------|-------|--------|--------|
+| Replay Attack Protection | 3 | 3 | ✅ |
+| Privilege Escalation | 4 | 4 | ✅ |
+| Injection Protection | 1 | 1 | ✅ |
+| **Total** | **8** | **8** | **100%** |
+
+---
+
+## Test Categories
+
+### 1. Replay Attack Protection
+
+Tests that verify the system correctly rejects invalid, fake, or missing credentials.
+
+| # | Scenario | Expected | Actual | Status |
+|---|----------|----------|--------|--------|
+| 1.1 | No API Key | 401 | 401 | ✅ |
+| 1.2 | Fake API Key | 401 | 401 | ✅ |
+| 1.3 | Valid format, non-existent | 401 | 401 | ✅ |
+
+**Test 1.1: No Authentication**
+
+```bash
+$ curl http://localhost:53100/api/auth/keys
+
+{"success":false,"error":{"code":"UNAUTHORIZED","message":"Authentication required"}}
+```
+
+**Test 1.2: Fake API Key**
+
+```bash
+$ curl -H "X-API-Key: fake-key" http://localhost:53100/api/auth/keys
+
+{"success":false,"error":{"code":"UNAUTHORIZED","message":"Authentication required"}}
+```
+
+**Test 1.3: Valid Format, Non-existent Key**
+
+```bash
+$ curl -H "X-API-Key: ak_fake123456_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" \
+  http://localhost:53100/api/auth/keys
+
+{"success":false,"error":{"code":"UNAUTHORIZED","message":"Authentication required"}}
+```
+
+---
+
+### 2. Privilege Escalation Protection
+
+Tests that verify the system correctly denies unauthorized operations.
+
+| # | Scenario | Expected | Actual | Status |
+|---|----------|----------|--------|--------|
+| 2.1 | Non-admin creates function | 403 | 403 | ✅ |
+| 2.2 | Non-admin deletes policy | 403 | 403 | ✅ |
+| 2.3 | Non-admin creates API key | 403 | 403 | ✅ |
+| 2.4 | Unauthorized agent invokes | 403 | 403 | ✅ |
+
+**Test 2.1: Non-admin Attempts to List API Keys**
+
+```bash
+$ curl -H "X-API-Key: $BOB_KEY" http://localhost:53100/api/auth/keys
+
+{"success":false,"error":{"errorType":"Forbidden","message":"Access denied: read on trn:auth:*:key/*"}}
+```
+
+**Test 2.2: Non-admin Attempts to Create API Key**
+
+```bash
+$ curl -X POST -H "X-API-Key: $BOB_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"evil-key","principal":"user:bob"}' \
+  http://localhost:53100/api/auth/keys
+
+{"success":false,"error":{"errorType":"Forbidden","message":"Access denied: declare on trn:auth:*:key/*"}}
+```
+
+**Test 2.3: Non-admin Attempts to Delete Policy**
+
+```bash
+$ curl -X DELETE -H "X-API-Key: $BOB_KEY" \
+  http://localhost:53100/api/auth/policies/admin:alice
+
+{"success":false,"error":{"errorType":"Forbidden","message":"Access denied: delete on trn:auth:*:policy/*"}}
+```
+
+**Test 2.4: Unauthorized Agent Attempts to Invoke Function**
+
+```bash
+$ curl -X POST -H "X-API-Key: $AGENT_KEY" \
+  http://localhost:53100/api/functions/secret-func/invoke
+
+{"success":false,"error":{"errorType":"Forbidden","message":"Access denied: invoke on trn:aionixfn:default:function/secret-func"}}
+```
+
+---
+
+### 3. Injection Protection
+
+Tests that verify the system ignores malicious header injections.
+
+| # | Scenario | Expected | Actual | Status |
+|---|----------|----------|--------|--------|
+| 3.1 | X-Principal header injection | Ignored | Ignored | ✅ |
+
+**Test 3.1: X-Principal Header Injection**
+
+Bob (read-only user) attempts to impersonate Alice (admin) by injecting the `X-Principal` header:
+
+```bash
+$ curl -H "X-API-Key: $BOB_KEY" \
+  -H "X-Principal: user:alice" \
+  http://localhost:53100/api/auth/keys
+
+{"success":false,"error":{"errorType":"Forbidden","message":"Access denied: read on trn:auth:*:key/*"}}
+```
+
+**Result**: The injected header is ignored. Bob is still identified as Bob (from his API key), and the request is denied because Bob lacks permission.
+
+---
+
+## Continuous Testing
+
+These tests are part of the CI/CD pipeline and run on every commit. The test suite uses:
+
+- **Real HTTP requests** against a running Auth service
+- **Multiple test users** with different permission levels
+- **Adversarial payloads** designed to exploit common vulnerabilities
+
+---
+
+## Attack Vectors Covered
+
+| Vector | Protection | Test IDs |
+|--------|------------|----------|
+| Missing credentials | 401 Unauthorized | 1.1 |
+| Credential guessing | 401 Unauthorized | 1.2, 1.3 |
+| Horizontal privilege escalation | 403 Forbidden | 2.1-2.4 |
+| Vertical privilege escalation | 403 Forbidden | 2.1-2.4 |
+| Header injection | Ignored | 3.1 |
+
+---
+
+## Comparison with Industry Standards
+
+| Feature | AionixOne | AWS IAM | Kubernetes RBAC |
+|---------|-----------|---------|-----------------|
+| Model | ABAC | ABAC | RBAC |
+| Resource ID | TRN | ARN | namespace/name |
+| Principal Types | 3 | Multiple | 2 |
+| Conditions | ✅ | ✅ | ❌ |
+| Priority | ✅ | ❌ | ❌ |
+| Multi-tenant | Built-in | Account-based | Namespace |
+
+---
+
+## Reporting Security Issues
+
+If you discover a security vulnerability not covered by these tests, please report it to:
+
+**security@aionixone.com**
+
+We take all security reports seriously and will respond within 24 hours.

@@ -1,5 +1,6 @@
 {
   "index": "Overview",
+  "auth": "Auth",
   "stepflow": "StepFlow",
   "aionixfn": "AionixFn",
   "igniter": "Igniter",

@@ -1,0 +1,56 @@
+---
+title: Auth - Authorization Service
+---
+
+# Authorization Service
+
+Enterprise-grade **ABAC (Attribute-Based Access Control)** system providing unified identity authentication and permission control across all AionixOne services.
+
+> Formally specified. Adversarially verified. Production ready.
+
+## Overview
+
+The Auth service is the security foundation of AionixOne. Every API request passes through it. Every resource access is evaluated against policies. No exceptions.
+
+```
+Request → API Key Auth → Principal Extraction → Policy Evaluation → Allow / Deny
+```
+
+## Core Components
+
+| Component | Purpose |
+|-----------|---------|
+| **[Security Model](./model)** | Principals, Actions, and TRN resources |
+| **[Policies](./policies)** | Policy schema and authorization rules |
+| **[Guarantees](./guarantees)** | What the system guarantees |
+| **[Verification](./verification)** | Adversarial test results |
+
+## TRN Resources
+
+```
+trn:auth:{tenant}:key/{key_id}
+trn:auth:{tenant}:policy/{policy_id}
+```
+
+## Quick Facts
+
+- **Model**: ABAC (Attribute-Based Access Control)
+- **Authentication**: API Key with SHA256 hashing
+- **Principal Types**: `user`, `agent`, `system`
+- **Actions**: 8 fine-grained action types
+- **Multi-tenant**: Built-in workspace isolation
+
+## Constitution Lock
+
+As of `v0.1.0-control-plane`, the following components are locked:
+
+| Component | Status |
+|-----------|--------|
+| Principal types | 🔒 Locked |
+| Action enum | 🔒 Locked |
+| Policy schema | 🔒 Locked |
+| TRN format | 🔒 Locked |
+| Decision enum | 🔒 Locked |
+| API Key format | 🔒 Locked |
+
+Breaking changes require `BREAKING_CHANGE` documentation and major version bump.

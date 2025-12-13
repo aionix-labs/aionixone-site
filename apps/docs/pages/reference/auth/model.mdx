@@ -1,0 +1,197 @@
+---
+title: Security Model
+---
+
+# Security Model
+
+The Auth service uses a **three-layer security model** that cleanly separates authentication, authorization, and resource identification.
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        API Gateway                               │
+│  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐      │
+│  │ API Key Auth │───▶│   Principal  │───▶│    Policy    │      │
+│  │  (SHA256)    │    │  Extraction  │    │   Evaluator  │      │
+│  └──────────────┘    └──────────────┘    └──────────────┘      │
+│                                                 │                │
+│                                                 ▼                │
+│                                          ┌──────────────┐       │
+│                                          │   Decision   │       │
+│                                          │ Allow / Deny │       │
+│                                          └──────────────┘       │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+| Layer | Component | Responsibility |
+|-------|-----------|---------------|
+| **Authentication** | API Key Authenticator | Verify identity, extract Principal |
+| **Authorization** | Policy Evaluator | Policy-based access decisions |
+| **Resources** | TRN | Unified resource identifiers |
+
+---
+
+## Principal Types
+
+Every authenticated request is associated with a **Principal** — the identity performing the action. There are exactly three principal types:
+
+### User
+
+Human operators interacting with the system through CLI, API, or Studio.
+
+```json
+{ "type": "user", "id": "alice" }
+```
+
+**Use cases:**
+- Developers managing functions and workflows
+- Operators monitoring executions
+- Administrators configuring policies
+
+### Agent
+
+Automated programs and bots that execute on behalf of users or systems.
+
+```json
+{ "type": "agent", "id": "data-processor" }
+```
+
+**Use cases:**
+- CI/CD pipelines deploying functions
+- Data processing jobs
+- Scheduled automation tasks
+
+### System
+
+Internal services and engines that are part of the AionixOne platform.
+
+```json
+{ "type": "system", "id": "stepflow-engine" }
+```
+
+**Use cases:**
+- StepFlow engine invoking functions during workflow execution
+- Igniter triggering workflows based on events
+- Internal service-to-service communication
+
+---
+
+## Action Types
+
+Actions define **what** an operation does. There are exactly 8 action types, divided into three categories:
+
+### Write Operations
+
+| Action | Description | Example |
+|--------|-------------|---------|
+| `Declare` | Create new resources | Create a function, deploy a workflow |
+| `Update` | Modify existing resources | Update config, enable/disable resources |
+| `Delete` | Remove resources | Delete functions, revoke API keys |
+
+### Read Operations
+
+| Action | Description | Example |
+|--------|-------------|---------|
+| `Read` | View resources | List items, get details, view logs |
+
+### Runtime Operations
+
+| Action | Description | Example |
+|--------|-------------|---------|
+| `Execute` | Run workflows | Start StepFlow executions |
+| `Invoke` | Call functions | Invoke AionixFn functions |
+| `Emit` | Send events | Trigger event-driven flows |
+| `Schedule` | Schedule tasks | Create cron jobs, set timers |
+
+---
+
+## TRN Resources
+
+Every resource in AionixOne has a **TRN (Tenant Resource Name)** — a unique identifier that policies use to grant or deny access.
+
+### Format
+
+```
+trn:{service}:{tenant}:{path}
+```
+
+### Auth Service TRNs
+
+| TRN | Description |
+|-----|-------------|
+| `trn:auth:default:key/ak_JBsp2nuFgPl4` | API key in default workspace |
+| `trn:auth:prod:key/ak_prod_xyz` | API key in prod workspace |
+| `trn:auth:default:policy/admin:alice` | Admin policy for alice |
+| `trn:auth:*:key/*` | All API keys in all workspaces |
+
+### Wildcards
+
+Policies can use wildcards to match multiple resources:
+
+| Pattern | Matches |
+|---------|---------|
+| `trn:aionixfn:*:function/*` | All functions in all workspaces |
+| `trn:auth:*:key/*` | All API keys |
+| `trn:stepflow:prod:*` | All StepFlow resources in prod |
+| `trn:*` | **Super wildcard** — matches everything |
+
+---
+
+## API Key Authentication
+
+API keys are the primary authentication mechanism. Each key is tied to a specific principal.
+
+### Format
+
+```
+ak_{keyId}_{secret}
+
+Example: ak_JBsp2nuFgPl4_vZqNKeyoJp2qNXrZm1H2q6OQTIheeAps
+         ├─────────────┤ ├────────────────────────────────┤
+             Key ID              Secret (32 chars)
+```
+
+### Usage
+
+```bash
+# Method 1: X-API-Key Header (recommended)
+curl -H "X-API-Key: ak_xxx_yyy" https://api.aionixone.com/...
+
+# Method 2: Authorization Bearer
+curl -H "Authorization: Bearer ak_xxx_yyy" https://api.aionixone.com/...
+```
+
+### Security Features
+
+| Feature | Description |
+|---------|-------------|
+| **SHA256 Hash Storage** | Plaintext keys are never stored in the database |
+| **One-Time Display** | Keys shown only at creation, cannot be recovered |
+| **Instant Revocation** | Keys can be disabled immediately |
+| **Audit Trail** | `lastUsedAt` tracking for all key usage |
+
+---
+
+## Decision Flow
+
+When a request arrives, the Auth service evaluates it through this flow:
+
+```
+1. Extract API Key from request headers
+2. Validate key format (ak_{keyId}_{secret})
+3. Hash secret with SHA256
+4. Lookup key by ID, compare hash
+5. Extract Principal from key record
+6. Build authorization context:
+   - Principal: { type, id }
+   - Action: The operation being performed
+   - Resource: The TRN being accessed
+7. Evaluate all matching policies
+8. Return decision: Allow or Deny
+```
+
+If any step fails, the request is rejected with the appropriate HTTP status:
+
+| Code | Meaning |
+|------|---------|
+| `401` | Authentication failed (invalid or missing API key) |
+| `403` | Authorization failed (no matching allow policy) |

@@ -1,0 +1,257 @@
+---
+title: Policies
+---
+
+# Policies
+
+Policies define **who** can do **what** on **which resources**. The Auth service uses ABAC (Attribute-Based Access Control) for fine-grained permission management.
+
+---
+
+## Policy Schema
+
+```json
+{
+  "id": "policy-id",
+  "effect": "allow" | "deny",
+  "principalPattern": "type:id",
+  "actions": ["action1", "action2"],
+  "resources": ["trn:pattern1", "trn:pattern2"],
+  "conditions": {},
+  "priority": 10,
+  "description": "Optional description"
+}
+```
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `id` | Yes | Unique policy identifier |
+| `effect` | Yes | `allow` or `deny` |
+| `principalPattern` | Yes | Pattern matching principals (e.g., `user:alice`, `agent:*`) |
+| `actions` | Yes | List of allowed/denied actions |
+| `resources` | Yes | List of TRN patterns |
+| `conditions` | No | Additional conditions (future) |
+| `priority` | No | Higher priority policies are evaluated first (default: 0) |
+| `description` | No | Human-readable description |
+
+---
+
+## Policy Examples
+
+### Admin Policy
+
+Full access to all resources across all services.
+
+```json
+{
+  "id": "admin:alice",
+  "effect": "allow",
+  "principalPattern": "user:alice",
+  "actions": ["declare", "update", "delete", "read", "execute", "invoke", "emit", "schedule"],
+  "resources": ["trn:*"],
+  "priority": 1000,
+  "description": "Full admin access for alice"
+}
+```
+
+### Read-Only User
+
+Can view functions and workflows but cannot modify or execute them.
+
+```json
+{
+  "id": "readonly:bob",
+  "effect": "allow",
+  "principalPattern": "user:bob",
+  "actions": ["read"],
+  "resources": [
+    "trn:aionixfn:*:function/*",
+    "trn:stepflow:*:workflow/*"
+  ],
+  "priority": 10,
+  "description": "Read-only access to functions and workflows"
+}
+```
+
+### Production Agent
+
+An automated agent that can only invoke functions in the production workspace.
+
+```json
+{
+  "id": "agent:data-processor",
+  "effect": "allow",
+  "principalPattern": "agent:data-processor",
+  "actions": ["invoke"],
+  "resources": ["trn:aionixfn:prod:function/*"],
+  "priority": 10,
+  "description": "Production data processor agent"
+}
+```
+
+### Workspace-Scoped Operator
+
+Full access within a specific workspace only.
+
+```json
+{
+  "id": "operator:prod-team",
+  "effect": "allow",
+  "principalPattern": "user:*",
+  "actions": ["read", "execute", "invoke"],
+  "resources": [
+    "trn:aionixfn:prod:*",
+    "trn:stepflow:prod:*",
+    "trn:igniter:prod:*"
+  ],
+  "priority": 50,
+  "description": "Production team operators"
+}
+```
+
+### Explicit Deny
+
+Block a specific user from deleting any resources.
+
+```json
+{
+  "id": "deny:charlie-delete",
+  "effect": "deny",
+  "principalPattern": "user:charlie",
+  "actions": ["delete"],
+  "resources": ["trn:*"],
+  "priority": 2000,
+  "description": "Prevent charlie from deleting anything"
+}
+```
+
+---
+
+## Pattern Matching
+
+### Principal Patterns
+
+| Pattern | Matches |
+|---------|---------|
+| `user:alice` | Only the user alice |
+| `user:*` | All users |
+| `agent:data-*` | Agents starting with "data-" |
+| `system:*` | All system principals |
+| `*:*` | All principals of all types |
+
+### Resource Patterns (TRN Wildcards)
+
+| Pattern | Matches |
+|---------|---------|
+| `trn:aionixfn:default:function/hello` | Exact match |
+| `trn:aionixfn:*:function/*` | All functions in all workspaces |
+| `trn:stepflow:prod:*` | All StepFlow resources in prod |
+| `trn:*` | Everything |
+
+---
+
+## Policy Evaluation
+
+When a request is evaluated, the Auth service follows these rules:
+
+### 1. Collect Matching Policies
+
+Find all policies where:
+- Principal pattern matches the request principal
+- Actions include the requested action
+- At least one resource pattern matches the target TRN
+
+### 2. Sort by Priority
+
+Policies are sorted by `priority` in descending order. Higher priority policies are evaluated first.
+
+### 3. Apply First Match
+
+The first matching policy determines the outcome:
+- If `effect: "allow"` → Request is **allowed**
+- If `effect: "deny"` → Request is **denied**
+
+### 4. Default Deny
+
+If no policy matches, the request is **denied** by default.
+
+```
+Matching policies found?
+├── Yes → Sort by priority, apply first match
+│         ├── effect: "allow" → ALLOW
+│         └── effect: "deny"  → DENY
+└── No  → DEFAULT DENY
+```
+
+---
+
+## Builtin Policies
+
+The Auth service includes read-only builtin policies that cannot be modified or deleted:
+
+| Policy ID | Description |
+|-----------|-------------|
+| `builtin:system-internal` | Allows system principals to access internal resources |
+| `builtin:self-read` | Allows principals to read their own API keys |
+
+Builtin policies are prefixed with `builtin:` and have the highest priority.
+
+---
+
+## Best Practices
+
+### Principle of Least Privilege
+
+Grant only the minimum permissions needed:
+
+```json
+// Good: Specific permissions
+{
+  "id": "deploy:ci-agent",
+  "actions": ["declare", "update"],
+  "resources": ["trn:aionixfn:staging:function/*"]
+}
+
+// Bad: Overly broad permissions
+{
+  "id": "deploy:ci-agent",
+  "actions": ["declare", "update", "delete", "read", "execute", "invoke", "emit", "schedule"],
+  "resources": ["trn:*"]
+}
+```
+
+### Use Explicit Deny for Exceptions
+
+When you need to grant broad access with specific exceptions:
+
+```json
+// Allow all, but deny delete
+[
+  {
+    "id": "allow:operator",
+    "effect": "allow",
+    "actions": ["read", "execute", "invoke"],
+    "resources": ["trn:*"],
+    "priority": 10
+  },
+  {
+    "id": "deny:operator-delete",
+    "effect": "deny",
+    "actions": ["delete"],
+    "resources": ["trn:*"],
+    "priority": 100
+  }
+]
+```
+
+### Workspace Isolation
+
+Use workspace-scoped policies to enforce multi-tenant isolation:
+
+```json
+{
+  "id": "tenant:company-a",
+  "principalPattern": "user:*@company-a",
+  "resources": ["trn:*:company-a:*"]
+}
+```
