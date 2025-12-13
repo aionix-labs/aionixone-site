@@ -1,0 +1,469 @@
+---
+title: aio fn (AionixFn)
+---
+
+# aio fn — Function Management
+
+Manage serverless functions with AionixFn.
+
+## Overview
+
+| Property | Value |
+|----------|-------|
+| Service | AionixFn |
+| Command | `aio fn` / `aio function` |
+| TRN Format | `trn:aionixfn:{tenant}:function/{name}` |
+
+## Quick Start
+
+```bash
+# Deploy a function (most common command)
+aio fn deploy my-func
+
+# Invoke the function
+aio fn invoke my-func --data '{"name": "World"}'
+```
+
+## Command Summary
+
+```yaml
+# Deployment
+aio fn deploy <name>         # Deploy function (creates if needed)
+
+# CRUD Operations
+aio fn list                  # List functions
+aio fn get <name>            # Get function details
+aio fn create <name>         # Create function (metadata only)
+aio fn update <name>         # Update function metadata
+aio fn delete <name>         # Delete function
+
+# Execute Operations
+aio fn invoke <name>         # Invoke function
+
+# Version Management
+aio fn versions <name>       # List versions
+aio fn rollback <name>       # Rollback to previous version
+
+# Alias Management
+aio fn alias list <name>     # List aliases
+aio fn alias set <fn> <alias> <ver>  # Set alias
+aio fn alias delete <fn> <alias>     # Delete alias
+
+# Runtime Info
+aio fn runtimes              # List supported runtimes
+
+# Observability
+aio fn logs <name>           # View logs
+```
+
+---
+
+## Commands
+
+### `aio fn deploy` ⭐
+
+Deploy function code. Creates the function if it doesn't exist.
+
+```bash
+aio fn deploy <name> [options]
+```
+
+**Options:**
+
+| Flag | Short | Type | Default | Description |
+|------|-------|------|---------|-------------|
+| `--code` | `-c` | path | `.` | Code directory or zip file |
+| `--runtime` | `-r` | string | auto | Runtime: `python`, `nodejs`, `deno` |
+| `--handler` | | string | `handler.main` | Entry point |
+| `--timeout` | | int | 30 | Timeout in seconds |
+| `--memory` | | int | 128 | Memory in MB |
+| `--env` | `-e` | string | | Environment variable (KEY=VALUE) |
+| `--description` | `-d` | string | | Function description |
+| `--publish` | | bool | true | Auto-set `latest` alias |
+| `--dry-run` | | bool | false | Validate without deploying |
+
+**Examples:**
+
+```bash
+# Deploy current directory
+aio fn deploy my-function
+
+# Specify code path
+aio fn deploy my-function --code ./src
+
+# With runtime and handler
+aio fn deploy my-function --runtime python --handler app.handler
+
+# With environment variables
+aio fn deploy my-function --env "API_KEY=xxx" --env "DEBUG=true"
+
+# Deploy without setting latest alias
+aio fn deploy my-function --publish=false
+
+# Dry run (validate only)
+aio fn deploy my-function --dry-run
+```
+
+**Output:**
+
+```
+⠋ Packaging code...
+⠋ Uploading (1.2 MB)...
+⠋ Creating version...
+
+✓ Function 'my-function' deployed
+  TRN:      trn:aionixfn:default:function/my-function
+  Version:  v3
+  Runtime:  python
+  Size:     1.2 MB
+  Alias:    latest → v3
+```
+
+---
+
+### `aio fn list`
+
+List all functions.
+
+```bash
+aio fn list [--limit N] [--offset N]
+```
+
+**Output:**
+
+```
+NAME              VERSION    STATUS     RUNTIME      UPDATED
+────────────────────────────────────────────────────────────────
+my-function       v3         ● active   python       2 hours ago
+hello-world       v1         ● active   nodejs       5 days ago
+
+Showing 2 of 2 functions
+```
+
+---
+
+### `aio fn get`
+
+Get function details.
+
+```bash
+aio fn get <name> [--version VER]
+```
+
+**Output:**
+
+```
+┌─────────────────────────────────────────────────────┐
+│ Function: my-function                               │
+├─────────────────────────────────────────────────────┤
+│ TRN          │ trn:aionixfn:default:function/my-fn  │
+│ Status       │ active                               │
+│ Runtime      │ python                               │
+│ Handler      │ handler.main                         │
+│ Memory       │ 128 MB                               │
+│ Timeout      │ 30s                                  │
+│ Created      │ 2025-01-15 10:30:00                  │
+│ Updated      │ 2025-01-20 14:22:10                  │
+├─────────────────────────────────────────────────────┤
+│ Versions: 3  │ Latest: v3                           │
+│ Aliases:  2  │ prod → v3, staging → v2              │
+└─────────────────────────────────────────────────────┘
+```
+
+---
+
+### `aio fn invoke`
+
+Invoke a function.
+
+```bash
+aio fn invoke <name> [options]
+```
+
+**Options:**
+
+| Flag | Short | Type | Description |
+|------|-------|------|-------------|
+| `--data` | `-d` | JSON | Input data |
+| `--file` | | path | Read input from file |
+| `--async` | `-a` | bool | Async execution |
+| `--version` | | string | Invoke specific version |
+| `--alias` | | string | Invoke via alias |
+| `--timeout` | | string | Override timeout |
+
+**Examples:**
+
+```bash
+# Basic invoke (uses latest alias)
+aio fn invoke my-function
+
+# With input data
+aio fn invoke my-function --data '{"name": "Alice"}'
+
+# From file
+aio fn invoke my-function --file input.json
+
+# Invoke specific version
+aio fn invoke my-function --version v2
+
+# Invoke via alias
+aio fn invoke my-function --alias prod
+
+# Async invocation
+aio fn invoke my-function --async
+```
+
+**Output:**
+
+```
+✓ Function invoked
+  Status: success
+  Duration: 120ms
+
+Output:
+{
+  "message": "Hello, Alice!"
+}
+```
+
+---
+
+### `aio fn delete`
+
+Delete a function and all its versions.
+
+```bash
+aio fn delete <name> [--force] [--keep-logs]
+```
+
+---
+
+### `aio fn versions`
+
+List function versions.
+
+```bash
+aio fn versions <name> [--limit N]
+```
+
+**Output:**
+
+```
+Versions for: my-function
+
+VERSION    STATUS      CREATED              SIZE
+────────────────────────────────────────────────────
+v3         ● active    2025-01-20 14:22     1.2 MB
+v2         ○ retired   2025-01-15 10:30     1.1 MB
+v1         ○ retired   2025-01-10 09:00     1.0 MB
+```
+
+---
+
+### `aio fn rollback`
+
+Rollback to a previous version.
+
+```bash
+aio fn rollback <name> [--version VER] [--yes]
+```
+
+**Examples:**
+
+```bash
+# Rollback to previous version
+aio fn rollback my-function
+
+# Rollback to specific version
+aio fn rollback my-function --version v2 --yes
+```
+
+---
+
+### Alias Management
+
+#### `aio fn alias list`
+
+```bash
+aio fn alias list <name>
+```
+
+**Output:**
+
+```
+Aliases for: my-function
+
+ALIAS      VERSION    UPDATED
+─────────────────────────────────────
+latest     v3         2 hours ago
+prod       v3         1 day ago
+staging    v2         3 days ago
+```
+
+#### `aio fn alias set`
+
+```bash
+aio fn alias set <function> <alias> <version> [--traffic "v2:90,v3:10"]
+```
+
+**Examples:**
+
+```bash
+# Set alias
+aio fn alias set my-func prod v3
+
+# Canary deployment (traffic split)
+aio fn alias set my-func prod v3 --traffic "v2:90,v3:10"
+```
+
+#### `aio fn alias delete`
+
+```bash
+aio fn alias delete <function> <alias> [--force]
+```
+
+> The `latest` alias cannot be deleted.
+
+---
+
+### `aio fn runtimes`
+
+List supported runtimes.
+
+```bash
+aio fn runtimes
+```
+
+**Output:**
+
+```
+RUNTIME        STATUS     DEFAULT    NOTES
+─────────────────────────────────────────────────────────────
+python3.11     stable     ✓          Default Python
+python3.12     stable     -          Latest features
+nodejs20       stable     ✓          Active LTS
+nodejs22       preview    -          Current
+deno1          stable     ✓          Latest 1.x
+
+Aliases:
+  python  → python3.11
+  nodejs  → nodejs20
+  deno    → deno1
+```
+
+---
+
+### `aio fn logs`
+
+View function logs.
+
+```bash
+aio fn logs <name> [options]
+```
+
+**Options:**
+
+| Flag | Short | Type | Default | Description |
+|------|-------|------|---------|-------------|
+| `--follow` | `-f` | bool | false | Stream logs |
+| `--lines` | `-n` | int | 50 | Number of lines |
+| `--since` | | string | | Time filter (e.g., "1h") |
+| `--level` | | string | | Log level filter |
+| `--invocation` | | string | | Filter by invocation ID |
+
+---
+
+## Handler Signature
+
+**All handlers must use single parameter signature:**
+
+### Python
+
+```python
+def main(event):
+    name = event.get("name", "World")
+    return {"message": f"Hello, {name}!"}
+```
+
+### Node.js
+
+```javascript
+export async function main(event) {
+    const name = event.name || "World";
+    return { message: `Hello, ${name}!` };
+}
+```
+
+### Event Structure
+
+```json
+{
+  "name": "Alice",
+  "data": { "key": "value" },
+  "context": {
+    "executionId": "exec-abc123",
+    "functionName": "my-func",
+    "versionId": "v3",
+    "invokedAt": "2024-12-03T12:00:00Z"
+  }
+}
+```
+
+---
+
+## TRN Patterns
+
+| Resource | TRN Pattern |
+|----------|-------------|
+| Function | `trn:aionixfn:{tenant}:function/{name}` |
+| Version | `trn:aionixfn:{tenant}:version/{name}/{versionId}` |
+| Alias | `trn:aionixfn:{tenant}:alias/{function}/{alias}` |
+| Invocation | `trn:aionixfn:{tenant}:invocation/{id}` |
+
+---
+
+## Complete Workflow
+
+```bash
+# 1. Deploy function
+aio fn deploy my-processor --code ./src --runtime python
+
+# 2. Test invoke
+aio fn invoke my-processor --data '{"items": [1, 2, 3]}'
+
+# 3. Check versions
+aio fn versions my-processor
+
+# 4. Create production alias
+aio fn alias set my-processor prod v1
+
+# 5. Deploy new version
+aio fn deploy my-processor --code ./src
+# Output: Version: v2, Alias: latest → v2
+
+# 6. Gradual rollout (canary)
+aio fn alias set my-processor prod v2 --traffic "v1:90,v2:10"
+
+# 7. Full rollout
+aio fn alias set my-processor prod v2
+
+# 8. Check logs
+aio fn logs my-processor --since 1h
+
+# 9. Rollback if needed
+aio fn rollback my-processor --version v1 --yes
+```
+
+---
+
+## Error Codes
+
+| Error | Exit Code | Message |
+|-------|-----------|---------|
+| Function Not Found | 1 | `Function '{name}' not found` |
+| Already Exists | 1 | `Function '{name}' already exists` |
+| Version Not Found | 1 | `Version '{version}' not found` |
+| No Code | 1 | `No code found in '{path}'` |
+| Invalid Runtime | 1 | `Cannot detect runtime, please specify --runtime` |
+| Artifact Too Large | 1 | `Artifact size exceeds limit (50MB)` |
+| Execution Failed | 1 | `Execution failed: {reason}` |

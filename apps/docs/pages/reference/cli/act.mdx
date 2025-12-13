@@ -1,0 +1,450 @@
+---
+title: aio act (OpenAct)
+---
+
+# aio act — Action Management
+
+Manage connectors and actions with OpenAct.
+
+## Overview
+
+| Property | Value |
+|----------|-------|
+| Service | OpenAct |
+| Command | `aio act` / `aio action` |
+| TRN Format | `trn:openact:{tenant}:action/{kind}/{name}` |
+
+## Quick Start
+
+```bash
+# Create an HTTP connection
+aio act conn create api-gateway \
+  --kind http \
+  --config '{"baseUrl": "https://api.example.com"}'
+
+# Execute an action
+aio act execute get-user \
+  --connection api-gateway \
+  --data '{"userId": "123"}'
+```
+
+## Command Summary
+
+```yaml
+# Connection Management
+aio act conn list            # List connections
+aio act conn get <name>      # Get connection details
+aio act conn create <name>   # Create connection
+aio act conn update <name>   # Update connection
+aio act conn delete <name>   # Delete connection
+aio act conn test <name>     # Test connection health
+aio act conn import          # Import from YAML
+
+# Action Management
+aio act list                 # List actions
+aio act get <name>           # Get action details
+aio act create <name>        # Create action
+aio act delete <name>        # Delete action
+
+# Execute Operations
+aio act execute <name>       # Execute action
+
+# Execution History
+aio act exec list            # List executions
+aio act exec get <id>        # Get execution details
+aio act exec cancel <id>     # Cancel execution
+
+# Connector Info
+aio act connectors           # List connector types
+aio act connector-schema     # Get connector schema
+```
+
+---
+
+## Connector Types
+
+| Kind | Description | Key Config Fields |
+|------|-------------|-------------------|
+| `http` | HTTP / REST API | `baseUrl`, `headers`, `timeout` |
+| `postgres` | PostgreSQL | `host`, `port`, `database`, `user` |
+| `mysql` | MySQL | `host`, `port`, `database`, `user` |
+| `redis` | Redis | `url`, `password` |
+| `mongodb` | MongoDB | `uri`, `database` |
+| `kafka` | Kafka | `brokers`, `clientId` |
+| `grpc` | gRPC | `address`, `tls` |
+| `graphql` | GraphQL | `endpoint`, `headers` |
+| `smtp` | SMTP Email | `host`, `port`, `auth` |
+| `s3` | AWS S3 | `bucket`, `region` |
+
+---
+
+## Commands
+
+### Connection Management
+
+#### `aio act conn create`
+
+Create a new connection.
+
+```bash
+aio act conn create <name> --kind KIND --config JSON [options]
+```
+
+**Options:**
+
+| Flag | Short | Type | Required | Description |
+|------|-------|------|----------|-------------|
+| `--kind` | `-k` | string | Yes | Connector kind |
+| `--config` | | JSON | Yes | Configuration |
+| `--description` | `-d` | string | No | Description |
+| `--tags` | | string | No | Comma-separated key=value |
+
+**Examples:**
+
+```bash
+# HTTP connection
+aio act conn create api-gateway \
+  --kind http \
+  --config '{"baseUrl": "https://api.example.com"}'
+
+# HTTP with auth expression
+aio act conn create payment-api \
+  --kind http \
+  --config '{"baseUrl": "https://api.stripe.com", "headers": {"Authorization": "Bearer {% $secret(\"stripe-key\") %}"}}'
+
+# PostgreSQL connection
+aio act conn create main-db \
+  --kind postgres \
+  --config '{"host": "db.example.com", "port": 5432, "database": "app", "user": "admin", "password": "{% $secret(\"db-password\") %}"}'
+
+# From file
+aio act conn create db-conn --kind postgres --config @db-config.json
+```
+
+**Output:**
+
+```
+✓ Connection 'api-gateway' created
+  TRN: trn:openact:default:connection/http/api-gateway
+```
+
+---
+
+#### `aio act conn list`
+
+List connections.
+
+```bash
+aio act conn list [--kind KIND] [--status STATUS] [--limit N]
+```
+
+**Output:**
+
+```
+NAME                           KIND            STATUS       UPDATED
+────────────────────────────────────────────────────────────────────────────────
+api-gateway                    http            Active       2025-01-20 14:00
+main-database                  postgres        Active       2025-01-20 12:00
+
+Showing 2 of 2 connections
+```
+
+---
+
+#### `aio act conn get`
+
+Get connection details.
+
+```bash
+aio act conn get <name>
+```
+
+**Output:**
+
+```
+┌─────────────────────────────────────────────────────┐
+│ Connection: api-gateway                             │
+├─────────────────────────────────────────────────────┤
+│ Name       │ api-gateway                            │
+│ TRN        │ trn:openact:default:connection/http/.. │
+│ Kind       │ Http                                   │
+│ Status     │ Active                                 │
+│ Created    │ 2025-01-10 09:00:00                    │
+└─────────────────────────────────────────────────────┘
+
+Configuration:
+{"baseUrl": "https://api.example.com", "timeout": 30000}
+```
+
+---
+
+#### `aio act conn test`
+
+Test connection health.
+
+```bash
+aio act conn test <name>
+```
+
+**Output (success):**
+
+```
+✓ Connection 'api-gateway' is healthy
+  Response time: 45ms
+```
+
+**Output (failure):**
+
+```
+✗ Connection 'api-gateway' failed
+  Error: Connection timeout after 30000ms
+```
+
+---
+
+#### `aio act conn delete`
+
+Delete a connection.
+
+```bash
+aio act conn delete <name> [--force]
+```
+
+---
+
+#### `aio act conn import`
+
+Import connections from YAML/JSON file.
+
+```bash
+aio act conn import --file FILE [--dry-run] [--upsert]
+```
+
+---
+
+### Action Management
+
+#### `aio act list`
+
+List actions.
+
+```bash
+aio act list [--connection CONN] [--kind KIND] [--limit N]
+```
+
+**Output:**
+
+```
+NAME                       CONNECTOR       DESCRIPTION
+─────────────────────────────────────────────────────────────────────────────────────
+get-user                   http            Fetch user by ID
+create-order               http            Create new order
+```
+
+---
+
+#### `aio act get`
+
+Get action details.
+
+```bash
+aio act get <name>
+```
+
+**Output:**
+
+```
+┌─────────────────────────────────────────────────────┐
+│ Action: get-user                                    │
+├─────────────────────────────────────────────────────┤
+│ Name       │ get-user                               │
+│ TRN        │ trn:openact:default:action/http/get-user │
+│ Connector  │ Http                                   │
+│ Created    │ 2025-01-15 10:00:00                    │
+└─────────────────────────────────────────────────────┘
+
+Input Schema:
+{"type": "object", "properties": {"userId": {"type": "string"}}}
+```
+
+---
+
+### Execute Commands
+
+#### `aio act execute`
+
+Execute an action.
+
+```bash
+aio act execute <name> --connection CONN [options]
+```
+
+**Options:**
+
+| Flag | Short | Type | Required | Description |
+|------|-------|------|----------|-------------|
+| `--connection` | `-c` | string | Yes | Connection to use |
+| `--data` | | JSON | No | Input data |
+| `--file` | | path | No | Read input from file |
+| `--stream` | | bool | No | Stream response |
+| `--timeout` | | string | No | Timeout (e.g., "30s") |
+
+**Examples:**
+
+```bash
+# Inline data
+aio act execute get-user \
+  --connection api-gateway \
+  --data '{"userId": "123"}'
+
+# From file
+aio act execute create-order \
+  --connection api-gateway \
+  --data @order.json
+```
+
+**Output:**
+
+```
+✓ Action executed
+  Execution ID: exec_abc123
+  Status: Completed
+  Duration: 125ms
+
+Output:
+{"id": "123", "name": "John Doe"}
+```
+
+---
+
+### Execution History
+
+#### `aio act exec list`
+
+List action executions.
+
+```bash
+aio act exec list [--action NAME] [--status STATUS] [--since TIME] [--limit N]
+```
+
+**Output:**
+
+```
+EXECUTION ID         ACTION            STATUS       DURATION   STARTED
+──────────────────────────────────────────────────────────────────────────────────────────
+exec_abc123          get-user          Completed    125ms      2025-01-20 14:30:00
+exec_def456          create-order      Failed       2100ms     2025-01-20 14:25:00
+```
+
+#### `aio act exec get`
+
+Get execution details.
+
+```bash
+aio act exec get <id>
+```
+
+#### `aio act exec cancel`
+
+Cancel a running execution.
+
+```bash
+aio act exec cancel <id>
+```
+
+---
+
+### Connector Info
+
+#### `aio act connectors`
+
+List available connector types.
+
+```bash
+aio act connectors
+```
+
+**Output:**
+
+```
+KIND                 DISPLAY NAME                        VERSION
+───────────────────────────────────────────────────────────────────────────────
+http                 HTTP / REST API                     1.0.0
+postgres             PostgreSQL Database                 1.0.0
+redis                Redis                               1.0.0
+kafka                Apache Kafka                        1.0.0
+```
+
+#### `aio act connector-schema`
+
+Get connector configuration schema.
+
+```bash
+aio act connector-schema <kind>
+```
+
+---
+
+## Expression Support
+
+OpenAct configurations support expressions:
+
+```json
+{
+  "headers": {
+    "Authorization": "Bearer {% $secret('api-key') %}"
+  },
+  "timeout": "{% $param('/config/timeout') %}"
+}
+```
+
+**Available Functions:**
+- `$secret("name")` — Reference CredVault secret
+- `$param("/path")` — Reference ParamStore parameter
+- `$env("VAR")` — Reference environment variable
+
+---
+
+## TRN Patterns
+
+| Resource | TRN Pattern |
+|----------|-------------|
+| Connection | `trn:openact:{tenant}:connection/{kind}/{name}` |
+| Action | `trn:openact:{tenant}:action/{kind}/{name}` |
+| Execution | `trn:openact:{tenant}:execution/{id}` |
+
+---
+
+## Complete Workflow
+
+```bash
+# Create connection with expression
+aio act conn create payment-api \
+  --kind http \
+  --config '{"baseUrl": "https://api.stripe.com", "headers": {"Authorization": "Bearer {% $secret(\"stripe-key\") %}"}}'
+
+# Test connection
+aio act conn test payment-api
+
+# Execute action
+aio act execute get-user \
+  --connection api-gateway \
+  --data '{"userId": "123"}'
+
+# Check execution history
+aio act exec list --action get-user --since 1h
+
+# Import connections from YAML
+aio act conn import --file connections.yaml --upsert
+```
+
+---
+
+## Error Codes
+
+| Error | Exit Code | Message |
+|-------|-----------|---------|
+| Not Found | 1 | `Connection/Action not found` |
+| Connection Failed | 1 | `Connection test failed: {reason}` |
+| Execution Failed | 1 | `Execution failed: {reason}` |
+| Timeout | 1 | `Execution timed out` |

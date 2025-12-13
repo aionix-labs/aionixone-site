@@ -17,29 +17,60 @@ chmod +x aio
 brew install aionixone/tap/aio
 ```
 
-## Global Options
+## Quick Start
 
 ```bash
-aio [command] [flags]
+# Deploy a function
+aio fn deploy my-func --code ./src
 
-Flags:
-  --output, -o    Output format: table, json, yaml, wide (default: table)
-  --tenant, -t    Tenant name (default: "default")
-  --server, -s    Server URL (default: "http://localhost:53000")
-  --help, -h      Show help
-  --version, -v   Show version
+# Invoke a function
+aio fn invoke my-func --data '{"name": "World"}'
+
+# Create and run a workflow
+aio wf create order-flow --dsl workflow.yaml
+aio wf run order-flow --input '{"orderId": "123"}'
+
+# Create a cron trigger
+aio tr create daily-report -t cron \
+  --config '{"schedule": "0 0 9 * * *"}' \
+  --action '{"target": "trn:stepflow:default:template/report"}'
+```
+
+## Global Options
+
+| Flag | Short | Type | Default | Description |
+|------|-------|------|---------|-------------|
+| `--output` | `-o` | string | `table` | Output format: `table`, `json`, `yaml`, `wide` |
+| `--quiet` | `-q` | bool | false | Quiet mode (names/IDs only) |
+| `--verbose` | `-v` | bool | false | Verbose output |
+| `--context` | | string | | Override current context |
+| `--tenant` | | string | `default` | Override tenant ID |
+| `--no-color` | | bool | false | Disable colored output |
+| `--raw` | | bool | false | Output raw API response |
+| `--api-base` | | string | | Override API URL |
+| `--profile` | | string | | Use specific config profile |
+| `--http-timeout` | | string | `30s` | HTTP client timeout |
+
+### Reserved Short Options
+
+These short options are reserved globally and cannot be used by subcommands:
+
+```
+-o  → --output   (global output format)
+-q  → --quiet    (global quiet mode)
+-v  → --verbose  (global verbose output)
 ```
 
 ## Command Groups
 
 | Command | Service | Description |
 |---------|---------|-------------|
-| `aio wf` | StepFlow | Workflow management |
-| `aio fn` | AionixFn | Function management |
-| `aio tr` | Igniter | Trigger management |
-| `aio act` | OpenAct | Action execution |
-| `aio sec` | CredVault | Secret management |
-| `aio param` | ParamStore | Parameter management |
+| [`aio fn`](./fn) | AionixFn | Serverless function management |
+| [`aio wf`](./wf) | StepFlow | Workflow orchestration |
+| [`aio tr`](./tr) | Igniter | Event triggers |
+| [`aio act`](./act) | OpenAct | Connectors and actions |
+| [`aio sec`](./sec) | CredVault | Secret management |
+| [`aio param`](./param) | ParamStore | Parameter management |
 
 ## TRN Resolution
 
@@ -49,8 +80,56 @@ Commands accept both full TRN and short names:
 # Full TRN
 aio wf run trn:stepflow:prod:template/order-flow
 
-# Short name (uses default tenant)
+# Short name (uses current tenant)
 aio wf run order-flow
+
+# With explicit tenant
+aio wf run order-flow --tenant prod
+```
+
+## Output Formats
+
+### Table (default)
+
+```
+NAME              VERSION    STATUS     RUNTIME      UPDATED
+────────────────────────────────────────────────────────────────
+my-function       v3         active     python       2 hours ago
+hello-world       v1         active     nodejs       5 days ago
+
+Showing 2 of 2 functions
+```
+
+### JSON (`-o json`)
+
+```json
+{
+  "success": true,
+  "data": { ... },
+  "metadata": { "requestId": "...", "timestamp": "..." }
+}
+```
+
+### Quiet (`-q`)
+
+```
+my-function
+hello-world
+```
+
+## Input Methods
+
+### Inline JSON
+
+```bash
+aio fn invoke my-func --data '{"key": "value"}'
+```
+
+### From File (@ prefix)
+
+```bash
+aio fn invoke my-func --data @input.json
+aio wf run my-workflow --input @workflow-input.yaml
 ```
 
 ## Shell Completion
@@ -66,21 +145,41 @@ aio completion zsh > ~/.zsh/completions/_aio
 aio completion fish > ~/.config/fish/completions/aio.fish
 ```
 
-## Documentation Export
+## Configuration
 
-```bash
-# Export all docs as markdown
-aio docs --format markdown > cli-docs.md
+The CLI uses a configuration file at `~/.aio/config.yaml`:
 
-# Export specific command
-aio docs wf --format markdown
+```yaml
+current-context: default
+
+contexts:
+  default:
+    api-base: http://localhost:53000
+    tenant: default
+
+  production:
+    api-base: https://api.aionixone.com
+    tenant: prod
+
+profiles:
+  default:
+    output: table
+    no-color: false
 ```
 
-## Reference Pages
+Switch contexts:
 
-- [aio wf](./wf) — StepFlow commands
-- [aio fn](./fn) — AionixFn commands
-- [aio tr](./tr) — Igniter commands
-- [aio act](./act) — OpenAct commands
-- [aio sec](./sec) — CredVault commands
-- [aio param](./param) — ParamStore commands
+```bash
+aio context use production
+aio context current
+```
+
+## Environment Variables
+
+| Variable | Description |
+|----------|-------------|
+| `AIONIX_API_BASE` | Override API base URL |
+| `AIONIX_TENANT` | Override tenant ID |
+| `AIONIX_API_KEY` | API key for authentication |
+| `AIONIX_CONFIG` | Path to config file |
+| `NO_COLOR` | Disable colored output |

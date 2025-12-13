@@ -1,0 +1,444 @@
+---
+title: aio wf (StepFlow)
+---
+
+# aio wf — Workflow Management
+
+Orchestrate workflows with StepFlow.
+
+## Overview
+
+| Property | Value |
+|----------|-------|
+| Service | StepFlow |
+| Command | `aio wf` / `aio workflow` |
+| TRN Format | `trn:stepflow:{tenant}:template/{name}` |
+
+## Quick Start
+
+```bash
+# Create workflow from DSL
+aio wf create order-flow --dsl workflow.yaml
+
+# Run workflow
+aio wf run order-flow --input '{"orderId": "123"}'
+
+# Check execution status
+aio wf execution exec_abc123
+```
+
+## Command Summary
+
+```yaml
+# Template Management (CRUD)
+aio wf list              # List templates
+aio wf get <name>        # Get template details
+aio wf create <name>     # Create template
+aio wf update <name>     # Update template DSL
+aio wf delete <name>     # Delete template
+
+# Execute Operations
+aio wf run <template>    # Start workflow execution
+
+# Execution Management
+aio wf executions        # List executions
+aio wf execution <id>    # Get execution details
+aio wf steps <id>        # List execution steps
+aio wf cancel <id>       # Cancel execution
+aio wf retry <id>        # Retry failed execution
+aio wf stream <id>       # Stream events
+
+# DSL Tools
+aio wf validate <file>   # Validate DSL
+aio wf lint <file>       # Lint DSL
+aio wf simulate <file>   # Dry-run simulation
+```
+
+---
+
+## Commands
+
+### `aio wf create`
+
+Create a new workflow template.
+
+```bash
+aio wf create <name> --dsl FILE [--description DESC]
+```
+
+**Examples:**
+
+```bash
+aio wf create order-flow --dsl order-workflow.yaml
+aio wf create order-flow --dsl order-workflow.yaml -d "Order processing"
+```
+
+**Output:**
+
+```
+✓ Template 'order-processing' created
+  TRN: trn:stepflow:default:template/order-processing
+  Version: 1
+```
+
+---
+
+### `aio wf list`
+
+List workflow templates.
+
+```bash
+aio wf list [--limit N] [--offset N]
+```
+
+**Output:**
+
+```
+NAME                     VERSION    UPDATED
+─────────────────────────────────────────────────────────────────
+order-processing         5          2025-01-20 14:22:10
+data-pipeline            3          2025-01-18 09:15:00
+
+Showing 2 of 2 templates
+```
+
+---
+
+### `aio wf get`
+
+Get template details.
+
+```bash
+aio wf get <name>
+```
+
+**Output:**
+
+```
+┌─────────────────────────────────────────────────────┐
+│ Template: order-processing                          │
+├─────────────────────────────────────────────────────┤
+│ Name         │ order-processing                     │
+│ TRN          │ trn:stepflow:default:template/...    │
+│ Version      │ 5                                    │
+│ Description  │ Process customer orders              │
+│ Created      │ 2025-01-10 09:00:00                  │
+│ Updated      │ 2025-01-20 14:22:10                  │
+└─────────────────────────────────────────────────────┘
+
+DSL:
+{
+  "name": "order-processing",
+  "steps": [...]
+}
+```
+
+---
+
+### `aio wf update`
+
+Update workflow template DSL.
+
+```bash
+aio wf update <name> --dsl FILE [--description DESC]
+```
+
+**Output:**
+
+```
+✓ Template 'order-processing' updated
+  Version: 6
+```
+
+---
+
+### `aio wf delete`
+
+Delete a workflow template.
+
+```bash
+aio wf delete <name> [--force]
+```
+
+---
+
+### `aio wf run`
+
+Start a workflow execution.
+
+```bash
+aio wf run <template> [options]
+```
+
+**Options:**
+
+| Flag | Type | Description |
+|------|------|-------------|
+| `--input` | JSON | Input data |
+| `--file` | path | Read input from file |
+| `--async` | bool | Don't wait for completion |
+
+**Examples:**
+
+```bash
+# Inline JSON
+aio wf run order-flow --input '{"orderId": "12345"}'
+
+# From file
+aio wf run order-flow --input @order-input.json
+
+# Async (don't wait)
+aio wf run order-flow --input '{"orderId": "12345"}' --async
+```
+
+**Output:**
+
+```
+✓ Workflow execution started
+  Run ID: exec_abc123
+  TRN: trn:stepflow:default:execution/order-flow/abc123
+  Status: running
+```
+
+---
+
+### `aio wf executions`
+
+List workflow executions.
+
+```bash
+aio wf executions [options]
+```
+
+**Options:**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--limit` | int | 50 | Maximum results |
+| `--status` | string | | Filter: running/completed/failed/cancelled |
+| `--template` | string | | Filter by template |
+
+**Examples:**
+
+```bash
+aio wf executions
+aio wf executions --status running
+aio wf executions --template order-flow --limit 5
+```
+
+**Output:**
+
+```
+TRN                           WORKFLOW           STATUS       STARTED
+────────────────────────────────────────────────────────────────────────────
+trn:stepflow:...:exec/abc123  order-processing   completed    2025-01-20 14:22
+trn:stepflow:...:exec/def456  data-pipeline      running      2025-01-20 14:30
+```
+
+---
+
+### `aio wf execution`
+
+Get execution details.
+
+```bash
+aio wf execution <run_id>
+```
+
+**Output:**
+
+```
+┌─────────────────────────────────────────────────────┐
+│ Execution: exec_abc123                              │
+├─────────────────────────────────────────────────────┤
+│ TRN          │ trn:stepflow:...:exec/abc123         │
+│ Workflow     │ order-processing                     │
+│ Status       │ completed                            │
+│ Started      │ 2025-01-20 14:22:10                  │
+│ Completed    │ 2025-01-20 14:23:45                  │
+└─────────────────────────────────────────────────────┘
+
+Input:
+{"orderId": "12345"}
+
+Result:
+{"processed": true, "items": 3}
+```
+
+---
+
+### `aio wf steps`
+
+List execution steps.
+
+```bash
+aio wf steps <run_id>
+```
+
+**Output:**
+
+```
+STEP                           STATUS          STARTED
+──────────────────────────────────────────────────────────────────────
+validate-order                 completed       14:22:11
+check-inventory                completed       14:22:15
+process-payment                completed       14:22:30
+send-confirmation              completed       14:23:00
+```
+
+---
+
+### `aio wf cancel`
+
+Cancel a running execution.
+
+```bash
+aio wf cancel <run_id> [--reason TEXT]
+```
+
+---
+
+### `aio wf retry`
+
+Retry a failed execution.
+
+```bash
+aio wf retry <run_id>
+```
+
+**Output:**
+
+```
+✓ Execution redriven
+  New Run TRN: trn:stepflow:...:exec/xyz789
+```
+
+---
+
+### `aio wf stream`
+
+Stream execution events in real-time.
+
+```bash
+aio wf stream <run_id>
+```
+
+**Output:**
+
+```
+ℹ Streaming events for: exec_abc123
+────────────────────────────────────────────────────────────────
+[14:22:11] step_started validate-order
+[14:22:14] step_completed validate-order
+[14:22:15] step_started check-inventory
+[14:22:28] step_completed check-inventory
+^C
+```
+
+---
+
+### DSL Tools
+
+#### `aio wf validate`
+
+Validate a workflow DSL.
+
+```bash
+aio wf validate <file>
+```
+
+**Output (valid):**
+
+```
+✓ DSL is valid
+```
+
+**Output (invalid):**
+
+```
+✗ DSL validation failed
+  • Missing required field: steps[0].type
+  • Invalid reference: $.input.unknownField
+```
+
+#### `aio wf lint`
+
+Lint workflow DSL for issues.
+
+```bash
+aio wf lint <file>
+```
+
+**Output:**
+
+```
+ℹ Lint results for workflow.yaml
+  ⚠ [warning] Step 'process' has no error handler
+  ⚠ [warning] Consider adding retry policy to step 'call-api'
+
+Summary: 2 issues (0 errors, 2 warnings)
+```
+
+#### `aio wf simulate`
+
+Dry-run simulate a workflow.
+
+```bash
+aio wf simulate <file> [--input JSON]
+```
+
+**Output:**
+
+```
+ℹ Simulation results
+  Success: Yes
+  Steps:   4
+  Duration: 125ms
+
+  Execution path:
+    → validate-order
+    → check-inventory
+    → process-payment
+    → send-confirmation
+
+Final Output:
+{"status": "completed", "orderId": "12345"}
+```
+
+---
+
+## TRN Patterns
+
+| Resource | TRN Pattern |
+|----------|-------------|
+| Template | `trn:stepflow:{tenant}:template/{name}` |
+| Execution | `trn:stepflow:{tenant}:execution/{template}/{run_id}` |
+
+---
+
+## Complete Workflow
+
+```bash
+# Create and run a workflow
+aio wf create order-flow --dsl order-workflow.yaml -d "Order processing"
+aio wf run order-flow --input '{"orderId": "ORD-123"}'
+
+# Monitor execution
+aio wf executions --template order-flow --status running
+aio wf stream exec_abc123
+
+# Debug DSL
+aio wf validate workflow.yaml
+aio wf simulate workflow.yaml --input '{"test": true}'
+```
+
+---
+
+## Error Codes
+
+| Error | Exit Code | Message |
+|-------|-----------|---------|
+| Not Found | 1 | `Template '{name}' not found` |
+| Already Exists | 1 | `Template '{name}' already exists` |
+| DSL Invalid | 1 | `DSL validation failed: {details}` |
+| Execution Failed | 1 | `Execution failed: {reason}` |

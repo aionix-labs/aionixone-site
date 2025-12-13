@@ -1,0 +1,429 @@
+---
+title: aio param (ParamStore)
+---
+
+# aio param — Parameter Management
+
+Manage configuration parameters with ParamStore.
+
+## Overview
+
+| Property | Value |
+|----------|-------|
+| Service | ParamStore |
+| Command | `aio param` / `aio ps` |
+| TRN Format | `trn:paramstore:{tenant}:param/{path}` |
+
+## Quick Start
+
+```bash
+# Set a parameter
+aio param set /app/config/db/host --type string --value "db.example.com"
+
+# Get a parameter
+aio param get --type string /app/config/db/host
+
+# List parameters
+aio param list --prefix /app/config
+```
+
+## Command Summary
+
+```yaml
+# CRUD Operations
+aio param list               # List parameters
+aio param get <path>         # Get parameter
+aio param set <path>         # Create/update parameter
+aio param delete <path>      # Delete parameter
+
+# Version Management
+aio param versions <path>    # List versions
+aio param version <path>     # Get specific version
+
+# Bulk Operations
+aio param bulk-get           # Get multiple parameters
+aio param bulk-delete        # Delete multiple parameters
+aio param export             # Export parameters
+aio param import             # Import parameters
+```
+
+---
+
+## Parameter Types
+
+| Type | Description | Example Value |
+|------|-------------|---------------|
+| `string` | Plain text | `"db.example.com"` |
+| `number` | Numeric | `5432` |
+| `boolean` | True/false | `true` |
+| `json` | JSON object | `{"enabled": true}` |
+| `string_list` | Comma-separated | `"a.com,b.com,c.com"` |
+| `secure_string` | Encrypted string | `"secret123"` |
+
+---
+
+## Commands
+
+### `aio param set`
+
+Create or update a parameter.
+
+```bash
+aio param set <path> --type TYPE --value VALUE [options]
+```
+
+**Options:**
+
+| Flag | Type | Required | Description |
+|------|------|----------|-------------|
+| `--type` | string | Yes | Parameter type |
+| `--value` | string | Yes | Parameter value |
+| `--description` | string | No | Description |
+| `--dynamic` | bool | No | Enable expression evaluation |
+| `--tags` | string | No | Comma-separated key=value |
+
+**Examples:**
+
+```bash
+# String parameter
+aio param set /app/config/db/host --type string --value "db.example.com"
+
+# Number parameter
+aio param set /app/config/db/port --type number --value 5432
+
+# Boolean parameter
+aio param set /app/config/debug --type boolean --value true
+
+# JSON parameter
+aio param set /app/config/features --type json --value '{"darkMode": true}'
+
+# String list
+aio param set /app/config/allowed-origins --type string_list --value "a.com,b.com,c.com"
+
+# Dynamic parameter with expression
+aio param set /app/config/api-url --type string --dynamic \
+  --value '{% $env("API_HOST") %}/v1'
+```
+
+**Output:**
+
+```
+✓ Parameter '/app/config/db/host' set
+  TRN: trn:paramstore:default:param/app/config/db/host
+  Version: v1
+```
+
+---
+
+### `aio param list`
+
+List parameters.
+
+```bash
+aio param list [options]
+```
+
+**Options:**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--prefix` | string | | Filter by path prefix |
+| `--recursive` | bool | false | Include nested paths |
+| `--type` | string | | Filter by type |
+| `--dynamic` | bool | | Filter by dynamic flag |
+| `--limit` | int | 50 | Maximum results |
+
+**Examples:**
+
+```bash
+aio param list
+aio param list --prefix /app/config
+aio param list --prefix /app/config --recursive
+aio param list --type json
+```
+
+**Output:**
+
+```
+PATH                                     TYPE         DYNAMIC  VERSION
+───────────────────────────────────────────────────────────────────────────────
+/app/config/database/host                string       No       v1
+/app/config/database/port                number       No       v1
+/app/config/feature-flags                json         Yes      v3
+```
+
+---
+
+### `aio param get`
+
+Get parameter value.
+
+```bash
+aio param get --type TYPE <path> [--evaluate]
+```
+
+**Options:**
+
+| Flag | Type | Description |
+|------|------|-------------|
+| `--evaluate` | bool | Evaluate dynamic expressions |
+
+**Output:**
+
+```
+┌─────────────────────────────────────────────────────┐
+│ Parameter: /app/config/database/host                │
+├─────────────────────────────────────────────────────┤
+│ Path       │ /app/config/database/host              │
+│ TRN        │ trn:paramstore:default:param/app/...   │
+│ Type       │ String                                 │
+│ Dynamic    │ No                                     │
+│ Version    │ v1                                     │
+└─────────────────────────────────────────────────────┘
+
+Value:
+"db.example.com"
+```
+
+---
+
+### `aio param delete`
+
+Delete a parameter.
+
+```bash
+aio param delete --type TYPE <path> --force
+```
+
+---
+
+### Version Management
+
+#### `aio param versions`
+
+List parameter versions.
+
+```bash
+aio param versions --type TYPE <path>
+```
+
+**Output:**
+
+```
+Versions for: /app/config/db/host
+
+VERSION      CREATED                   CREATED BY
+────────────────────────────────────────────────────────────────
+v3 (current) 2025-01-20 14:22:10       user:admin
+v2           2025-01-15 10:30:00       user:admin
+v1           2025-01-10 09:00:00       system
+```
+
+#### `aio param version`
+
+Get a specific version.
+
+```bash
+aio param version --type TYPE <path> <version-number>
+```
+
+**Output:**
+
+```
+Version 2 of /app/config/db/host
+
+Created: 2025-01-15 10:30:00
+Created By: user:admin
+
+Value:
+"old-db.example.com"
+```
+
+---
+
+### Bulk Operations
+
+#### `aio param bulk-get`
+
+Get multiple parameters at once.
+
+```bash
+aio param bulk-get --paths PATH1,PATH2,... [--evaluate]
+```
+
+**Output:**
+
+```
+PATH                                     TYPE         VALUE
+────────────────────────────────────────────────────────────────────────────────────
+/app/config/db/host                      string       "db.example.com"
+/app/config/db/port                      number       5432
+/app/config/debug                        boolean      true
+
+Not found:
+  /app/config/unknown
+```
+
+#### `aio param bulk-delete`
+
+Delete multiple parameters.
+
+```bash
+aio param bulk-delete --paths PATH1,PATH2,... --force
+```
+
+---
+
+### Import/Export
+
+#### `aio param export`
+
+Export parameters to file.
+
+```bash
+aio param export --prefix PATH [--output FILE] [--format FORMAT]
+```
+
+**Options:**
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--prefix` | string | `/` | Path prefix to export |
+| `--output` | string | stdout | Output file |
+| `--format` | string | yaml | Format: json/yaml |
+
+**Output file:**
+
+```yaml
+- path: /app/config/db/host
+  paramType: string
+  value: "db.example.com"
+  description: Database host
+  dynamic: false
+
+- path: /app/config/db/port
+  paramType: number
+  value: 5432
+  description: Database port
+  dynamic: false
+```
+
+#### `aio param import`
+
+Import parameters from file.
+
+```bash
+aio param import --file FILE [--overwrite] [--dry-run]
+```
+
+**Options:**
+
+| Flag | Type | Description |
+|------|------|-------------|
+| `--file` | path | YAML/JSON file |
+| `--overwrite` | bool | Update existing parameters |
+| `--dry-run` | bool | Preview without changes |
+
+---
+
+## Dynamic Parameters
+
+Dynamic parameters support expression evaluation:
+
+```bash
+# Reference environment variable
+aio param set /app/config/api-url --type string --dynamic \
+  --value '{% $env("API_HOST") %}/v1'
+
+# Reference another parameter
+aio param set /app/config/db-url --type string --dynamic \
+  --value 'postgres://{% $param("/app/config/db/host") %}:{% $param("/app/config/db/port") %}/mydb'
+
+# Conditional value
+aio param set /app/config/log-level --type string --dynamic \
+  --value '{% $env("DEBUG") = "true" ? "debug" : "info" %}'
+```
+
+Use `--evaluate` to resolve expressions:
+
+```bash
+aio param get --type string /app/config/api-url --evaluate
+# Output: https://api.example.com/v1
+```
+
+---
+
+## Path Conventions
+
+Parameters use hierarchical paths:
+
+```
+/app/                          # Application namespace
+  config/                      # Configuration
+    database/                  # Database settings
+      host                     # Individual parameter
+      port
+    features/                  # Feature flags
+  secrets/                     # Sensitive settings
+    api-key
+```
+
+**Best Practices:**
+- Use lowercase with hyphens: `/app/config/api-timeout`
+- Group related parameters: `/app/config/database/*`
+- Separate environments by tenant, not path
+
+---
+
+## TRN Patterns
+
+| Resource | TRN Pattern |
+|----------|-------------|
+| Parameter | `trn:paramstore:{tenant}:param/{type}/{path}` |
+
+---
+
+## Expression Support
+
+Reference parameters in other configurations:
+
+```
+{% $param('/app/config/db/host') %}
+{% $param('/app/config/timeout') %}
+```
+
+---
+
+## Complete Workflow
+
+```bash
+# Set up database configuration
+aio param set /app/config/db/host --type string --value "db.example.com"
+aio param set /app/config/db/port --type number --value 5432
+aio param set /app/config/db/name --type string --value "myapp"
+
+# Export for backup
+aio param export --prefix /app/config/db --output db-config.yaml
+
+# Bulk operations
+aio param bulk-get --paths "/app/config/db/host,/app/config/db/port"
+
+# Import from file
+aio param import --file config.yaml --dry-run
+aio param import --file config.yaml --overwrite
+
+# View history
+aio param versions --type string /app/config/db/host
+aio param version --type string /app/config/db/host 1
+```
+
+---
+
+## Error Codes
+
+| Error | Exit Code | Message |
+|-------|-----------|---------|
+| Not Found | 1 | `Parameter not found` |
+| Already Exists | 1 | `Parameter already exists` |
+| Invalid Type | 1 | `Unknown parameter type` |
+| Invalid Path | 1 | `Invalid parameter path` |

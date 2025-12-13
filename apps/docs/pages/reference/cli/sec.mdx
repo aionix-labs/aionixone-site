@@ -1,0 +1,430 @@
+---
+title: aio sec (CredVault)
+---
+
+# aio sec — Secret Management
+
+Manage credentials and secrets with CredVault.
+
+## Overview
+
+| Property | Value |
+|----------|-------|
+| Service | CredVault |
+| Command | `aio sec` / `aio secret` / `aio cred` |
+| TRN Format | `trn:credvault:{tenant}:credential/{type}/{name}` |
+
+## Quick Start
+
+```bash
+# Create an API key credential
+aio sec create prod/stripe-key \
+  -t apiKey \
+  --value '{"apiKey": "sk_live_xxx", "prefix": "Bearer"}'
+
+# Reveal the secret value
+aio sec reveal --type apiKey prod/stripe-key
+
+# Rotate to new value
+aio sec rotate --type apiKey prod/stripe-key \
+  --value '{"apiKey": "sk_live_new"}'
+```
+
+## Input Contract
+
+All commands require either:
+- `--type <subtype> <name_path>` — Structured input
+- `--trn <trn:credvault:...>` — Full TRN reference
+
+## Command Summary
+
+```yaml
+# CRUD Operations
+aio sec list                 # List credentials
+aio sec get <name>           # Get credential metadata
+aio sec create <name>        # Create credential
+aio sec update <name>        # Update metadata
+aio sec delete <name>        # Delete credential
+
+# Secret Operations
+aio sec reveal <name>        # Reveal secret value
+aio sec rotate <name>        # Rotate to new value
+
+# Lifecycle
+aio sec enable <name>        # Enable credential
+aio sec disable <name>       # Disable credential
+
+# Version Management
+aio sec versions <name>      # List versions
+aio sec activate <name>      # Activate version
+aio sec retire <name>        # Retire version
+
+# OAuth2
+aio sec oauth list           # List OAuth providers
+aio sec oauth create         # Create provider
+aio sec refresh <name>       # Refresh OAuth tokens
+aio sec revoke <name>        # Revoke OAuth tokens
+
+# Audit
+aio sec audit                # View audit logs
+```
+
+---
+
+## Credential Types
+
+| Type | Description | Value Fields |
+|------|-------------|--------------|
+| `apiKey` | API key with optional prefix | `apiKey`, `prefix` |
+| `bearer` | Bearer token | `token` |
+| `basicAuth` | Username/password | `username`, `password` |
+| `database` | Database credentials | `host`, `port`, `username`, `password`, `database` |
+| `oauth2` | OAuth2 tokens | Managed via `aio sec oauth` |
+| `certificate` | TLS certificates | `cert`, `key`, `ca` |
+| `cloudAws` | AWS credentials | `accessKeyId`, `secretAccessKey` |
+| `cloudGcp` | GCP credentials | `serviceAccountJson` |
+| `encryptionKey` | Encryption keys | `key` |
+
+---
+
+## Commands
+
+### `aio sec create`
+
+Create a new credential.
+
+```bash
+aio sec create <name> --type TYPE --value JSON [options]
+```
+
+**Options:**
+
+| Flag | Short | Type | Required | Description |
+|------|-------|------|----------|-------------|
+| `--type` | `-t` | string | Yes | Credential type |
+| `--value` | | JSON | Yes | Secret value |
+| `--description` | `-d` | string | No | Description |
+| `--tags` | | string | No | Comma-separated key=value |
+| `--expires-at` | | datetime | No | Expiration time (RFC3339) |
+
+**Examples:**
+
+```bash
+# API key
+aio sec create prod/payments/stripe \
+  -t apiKey \
+  --value '{"apiKey": "sk_live_xxx", "prefix": "Bearer"}' \
+  --description "Production Stripe key"
+
+# Basic auth
+aio sec create prod/db/main \
+  -t basicAuth \
+  --value '{"username": "admin", "password": "secret123"}'
+
+# Database credentials
+aio sec create prod/postgres \
+  -t database \
+  --value '{"host": "db.example.com", "port": 5432, "username": "app", "password": "pass", "database": "prod"}'
+
+# AWS credentials
+aio sec create cloud/aws-prod \
+  -t cloudAws \
+  --value '{"accessKeyId": "AKIA...", "secretAccessKey": "..."}'
+```
+
+**Output:**
+
+```
+✓ Credential created
+  TRN: trn:credvault:default:credential/apiKey/prod/payments/stripe
+  Name: prod/payments/stripe
+```
+
+---
+
+### `aio sec list`
+
+List credentials.
+
+```bash
+aio sec list [--type TYPE] [--status STATUS] [--limit N]
+```
+
+**Output:**
+
+```
+NAME                          TYPE         STATUS     UPDATED
+────────────────────────────────────────────────────────────────────────────
+prod/payments/stripe          apiKey       active     2025-01-20 14:00
+prod/db/main                  basicAuth    active     2025-01-15 10:30
+
+Showing 2 of 2 credentials
+```
+
+---
+
+### `aio sec get`
+
+Get credential metadata (not the secret value).
+
+```bash
+aio sec get --type TYPE <name>
+aio sec get --trn <trn>
+```
+
+**Output (JSON):**
+
+```json
+{
+  "trn": "trn:credvault:default:credential/apiKey/prod/payments/stripe",
+  "metadata": {
+    "name": "prod/payments/stripe",
+    "description": "Production Stripe key"
+  },
+  "currentVersion": 2,
+  "status": "active"
+}
+```
+
+---
+
+### `aio sec reveal`
+
+Reveal the secret value (audited).
+
+```bash
+aio sec reveal --type TYPE <name> [--version N]
+aio sec reveal --trn <trn> [--version N]
+```
+
+**Examples:**
+
+```bash
+# Reveal current version
+aio sec reveal --type apiKey prod/payments/stripe
+
+# Reveal specific version
+aio sec reveal --type apiKey prod/payments/stripe --version 1
+```
+
+**Output:**
+
+```json
+{
+  "trn": "trn:credvault:default:credential/apiKey/prod/payments/stripe",
+  "version": 2,
+  "value": {
+    "apiKey": "sk_live_xxx",
+    "prefix": "Bearer"
+  }
+}
+```
+
+---
+
+### `aio sec rotate`
+
+Rotate to a new secret value.
+
+```bash
+aio sec rotate --type TYPE <name> --value JSON [--activate BOOL]
+```
+
+**Examples:**
+
+```bash
+# Rotate and activate immediately
+aio sec rotate --type apiKey prod/payments/stripe \
+  --value '{"apiKey": "sk_live_new", "prefix": "Bearer"}'
+
+# Rotate but keep staged (not active yet)
+aio sec rotate --type apiKey prod/payments/stripe \
+  --value '{"apiKey": "sk_live_new"}' \
+  --activate false
+```
+
+---
+
+### `aio sec update`
+
+Update credential metadata.
+
+```bash
+aio sec update --type TYPE <name> [--description DESC] [--tags TAGS]
+aio sec update --trn <trn> [--description DESC] [--tags TAGS]
+```
+
+---
+
+### `aio sec delete`
+
+Delete a credential.
+
+```bash
+aio sec delete --type TYPE <name> --force
+aio sec delete --trn <trn> --force
+```
+
+---
+
+### `aio sec enable` / `aio sec disable`
+
+Enable or disable a credential.
+
+```bash
+aio sec enable --type TYPE <name>
+aio sec disable --type TYPE <name>
+```
+
+---
+
+### Version Management
+
+#### `aio sec versions`
+
+List credential versions.
+
+```bash
+aio sec versions --type TYPE <name> [--limit N]
+```
+
+**Output:**
+
+```
+VERSION    STATUS     CREATED
+────────────────────────────────────────────────────────
+2          active     2025-01-20 14:00:00
+1          retired    2025-01-10 09:00:00
+```
+
+#### `aio sec activate` / `aio sec retire`
+
+```bash
+aio sec activate --type TYPE <name> <version>
+aio sec retire --type TYPE <name> <version>
+```
+
+---
+
+### OAuth2 Management
+
+#### `aio sec oauth list`
+
+```bash
+aio sec oauth list
+```
+
+#### `aio sec oauth create`
+
+```bash
+aio sec oauth create <name> \
+  --client-id ID \
+  --client-secret-ref <credential-trn> \
+  --auth-url URL \
+  --token-url URL \
+  [--scopes SCOPES]
+```
+
+**Example:**
+
+```bash
+# First create the client secret
+aio sec create oauth/github-secret \
+  -t apiKey \
+  --value '{"apiKey": "gho_xxx"}'
+
+# Then create the OAuth provider
+aio sec oauth create github \
+  --client-id "Iv1.abc123" \
+  --client-secret-ref "trn:credvault:default:credential/apiKey/oauth/github-secret" \
+  --auth-url "https://github.com/login/oauth/authorize" \
+  --token-url "https://github.com/login/oauth/access_token" \
+  --scopes "repo,read:user"
+```
+
+#### `aio sec refresh` / `aio sec revoke`
+
+```bash
+aio sec refresh --trn <oauth-credential-trn>
+aio sec revoke --trn <oauth-credential-trn> --force
+```
+
+---
+
+### Audit
+
+```bash
+aio sec audit [--credential-trn TRN] [--event-type TYPE] [--limit N]
+```
+
+**Output (JSON):**
+
+```json
+[
+  {
+    "event": "revealed",
+    "credentialTrn": "trn:credvault:...",
+    "principal": "user:alice",
+    "timestamp": "2025-01-20T14:30:00Z"
+  }
+]
+```
+
+---
+
+## TRN Patterns
+
+| Resource | TRN Pattern |
+|----------|-------------|
+| Credential | `trn:credvault:{tenant}:credential/{type}/{name}` |
+| OAuth Account | `trn:credvault:{tenant}:credential/oauth/{provider}/{accountId}` |
+
+---
+
+## Expression Support
+
+Reference credentials in other configurations:
+
+```
+{% $secret('prod/payments/stripe') %}
+{% $secret('prod/db/main', 'password') %}
+```
+
+---
+
+## Complete Workflow
+
+```bash
+# 1. Create a credential
+aio sec create prod/payments/stripe \
+  -t apiKey \
+  --value '{"apiKey": "sk_live_xxx", "prefix": "Bearer "}' \
+  --description "Production Stripe key"
+
+# 2. Get TRN
+TRN=$(aio --output json sec get --type apiKey prod/payments/stripe | jq -r '.trn')
+
+# 3. Reveal value (audited)
+aio sec reveal --trn "$TRN"
+
+# 4. Rotate and view versions
+aio sec rotate --type apiKey prod/payments/stripe --value '{"apiKey": "sk_live_new"}'
+aio sec versions --trn "$TRN"
+
+# 5. Audit activity
+aio sec audit --credential-trn "$TRN" --limit 10
+
+# 6. Delete when no longer needed
+aio sec delete --trn "$TRN" --force
+```
+
+---
+
+## Error Codes
+
+| Error | Exit Code | Message |
+|-------|-----------|---------|
+| Not Found | 1 | `Credential not found` |
+| Already Exists | 1 | `Credential already exists` |
+| Invalid Type | 1 | `Unknown credential type` |
+| Disabled | 1 | `Credential is disabled` |

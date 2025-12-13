@@ -1,0 +1,454 @@
+---
+title: aio tr (Igniter)
+---
+
+# aio tr — Trigger Management
+
+Manage event triggers with Igniter.
+
+## Overview
+
+| Property | Value |
+|----------|-------|
+| Service | Igniter |
+| Command | `aio tr` / `aio trigger` |
+| TRN Format | `trn:igniter:{tenant}:trigger/{type}/{name}` |
+
+## Quick Start
+
+```bash
+# Create a cron trigger
+aio tr create daily-report -t cron \
+  --config '{"schedule": "0 0 9 * * *", "timezone": "UTC"}' \
+  --action '{"target": "trn:stepflow:default:template/report"}'
+
+# Manually fire a trigger
+aio tr fire cron/daily-report
+
+# List triggers
+aio tr list
+```
+
+## Command Summary
+
+```yaml
+# CRUD Operations
+aio tr list                  # List triggers
+aio tr get <type/name>       # Get trigger details
+aio tr create <name>         # Create trigger
+aio tr update <type/name>    # Update trigger
+aio tr delete <type/name>    # Delete trigger
+
+# Lifecycle
+aio tr enable <type/name>    # Enable trigger
+aio tr disable <type/name>   # Disable trigger
+
+# Execute Operations
+aio tr fire <type/name>      # Manually fire trigger
+
+# Monitoring
+aio tr health <type/name>    # Check trigger health
+aio tr stats <type/name>     # View statistics
+
+# Execution History
+aio tr exec list             # List executions
+aio tr exec get <exec-id>    # Get execution details
+
+# Dead Letter Queue
+aio tr dlq list              # List DLQ entries
+aio tr dlq retry <dlq-trn>   # Retry DLQ entry
+aio tr dlq purge             # Purge DLQ entries
+```
+
+---
+
+## Trigger Types
+
+| Type | Description | Key Config Fields |
+|------|-------------|-------------------|
+| `cron` | Scheduled execution | `schedule`, `timezone` |
+| `webhook` | HTTP webhook endpoint | `path`, `method` |
+| `httppoll` | HTTP polling | `url`, `intervalMs` |
+| `kafka` | Kafka consumer | `brokers`, `topic`, `groupId` |
+| `redis` | Redis pub/sub or stream | `url`, `channel` |
+| `postgres` | PostgreSQL notifications | `connectionString`, `channel` |
+| `sqs` | AWS SQS queue | `queueUrl`, `region` |
+| `imap` | Email IMAP IDLE | `host`, `port`, `mailbox` |
+| `filewatch` | File system watcher | `path`, `patterns` |
+| `delay` | Delayed execution | `delayMs`, `executeAt` |
+
+---
+
+## Commands
+
+### `aio tr create`
+
+Create a new trigger.
+
+```bash
+aio tr create <name> --type TYPE --config JSON --action JSON [options]
+```
+
+**Options:**
+
+| Flag | Short | Type | Required | Description |
+|------|-------|------|----------|-------------|
+| `--type` | `-t` | string | Yes | Trigger type |
+| `--config` | | JSON | Yes | Source configuration |
+| `--action` | | JSON | Yes | Action definition |
+| `--description` | `-d` | string | No | Description |
+
+**Examples:**
+
+```bash
+# Cron trigger - daily at 9am (6-field format: sec min hour day month weekday)
+aio tr create daily-report \
+  -t cron \
+  --config '{"schedule": "0 0 9 * * *", "timezone": "UTC"}' \
+  --action '{"target": "trn:stepflow:default:template/report"}'
+
+# Webhook trigger
+aio tr create stripe-hook \
+  -t webhook \
+  --config '{"path": "/webhooks/stripe", "methods": ["POST"]}' \
+  --action '{"target": "trn:aionixfn:default:function/process-payment"}'
+
+# HTTP poll trigger
+aio tr create stock-sync \
+  -t httppoll \
+  --config '{"url": "https://api.example.com/stock", "intervalMs": 300000}' \
+  --action '{"target": "trn:aionixfn:default:function/update-stock"}'
+
+# Kafka trigger
+aio tr create order-events \
+  -t kafka \
+  --config '{"brokers": ["kafka:9092"], "topic": "orders", "groupId": "igniter"}' \
+  --action '{"target": "trn:stepflow:default:template/process-order"}'
+```
+
+**Output:**
+
+```
+✓ Trigger 'daily-report' created
+  TRN: trn:igniter:default:trigger/cron/daily-report
+```
+
+---
+
+### `aio tr list`
+
+List triggers.
+
+```bash
+aio tr list [--type TYPE] [--enabled BOOL] [--limit N]
+```
+
+**Output:**
+
+```
+TYPE/NAME                       TYPE         STATUS     ENABLED
+──────────────────────────────────────────────────────────────────────────────
+cron/daily-report               cron         ● running  yes
+webhook/stripe-hook             webhook      ● running  yes
+httppoll/stock-sync             httppoll     ○ stopped  no
+
+Showing 3 of 3 triggers
+Tip: Use type/name format with commands (e.g., aio tr get cron/my-trigger)
+```
+
+---
+
+### `aio tr get`
+
+Get trigger details.
+
+```bash
+aio tr get <type/name>
+```
+
+**Output:**
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ Trigger: daily-report                                           │
+├─────────────────────────────────────────────────────────────────┤
+│ TRN        │ trn:igniter:default:trigger/cron/daily-report      │
+│ Type       │ cron                                                │
+│ Status     │ running                                             │
+│ Enabled    │ Yes                                                 │
+│ Created    │ 2025-01-10 09:00:00                                 │
+└─────────────────────────────────────────────────────────────────┘
+
+Source Configuration:
+  schedule: "0 0 9 * * *"
+  timezone: "UTC"
+
+Action:
+  target: trn:stepflow:default:template/generate-report
+```
+
+---
+
+### `aio tr update`
+
+Update trigger configuration.
+
+```bash
+aio tr update <type/name> [--config JSON] [--action JSON] [--description DESC]
+```
+
+**Examples:**
+
+```bash
+aio tr update cron/daily-report --config '{"schedule": "0 0 10 * * *"}'
+aio tr update webhook/api-hook --action '{"target": "trn:aionixfn:default:function/v2"}'
+```
+
+---
+
+### `aio tr delete`
+
+Delete a trigger.
+
+```bash
+aio tr delete <type/name> [--force]
+```
+
+---
+
+### `aio tr enable` / `aio tr disable`
+
+Enable or disable a trigger.
+
+```bash
+aio tr enable <type/name>
+aio tr disable <type/name>
+```
+
+**Output:**
+
+```
+✓ Trigger 'cron/daily-report' enabled
+```
+
+---
+
+### `aio tr fire`
+
+Manually fire a trigger.
+
+```bash
+aio tr fire <type/name> [--payload JSON] [--dry-run]
+```
+
+**Examples:**
+
+```bash
+# Fire with payload
+aio tr fire webhook/stripe-hook --payload '{"event": {"type": "payment.succeeded"}}'
+
+# Fire without payload
+aio tr fire cron/daily-report
+
+# Dry run
+aio tr fire cron/daily-report --dry-run
+```
+
+**Output:**
+
+```
+✓ Trigger executed
+  Execution ID: manual_abc123
+```
+
+---
+
+### `aio tr health`
+
+Check trigger health.
+
+```bash
+aio tr health <type/name>
+```
+
+**Output:**
+
+```
+Health: cron/daily-report
+  Status:           healthy
+  Source Connected: Yes
+  Checked At:       2025-01-20 14:30:00
+```
+
+---
+
+### `aio tr stats`
+
+View trigger statistics.
+
+```bash
+aio tr stats <type/name>
+```
+
+**Output:**
+
+```
+Statistics: cron/daily-report
+  Total Executions:    150
+  Successful:          148
+  Failed:              2
+  Last Execution:      2025-01-20 09:00:00
+  Avg Duration:        1.2s
+```
+
+---
+
+### Execution History
+
+#### `aio tr exec list`
+
+```bash
+aio tr exec list [--trigger TYPE/NAME] [--status STATUS] [--limit N]
+```
+
+**Output:**
+
+```
+EXECUTION ID       TRIGGER                  STATUS     DURATION   STARTED AT
+────────────────────────────────────────────────────────────────────────────────
+exec_abc123        cron/daily-report        ✓ success  1.2s       2025-01-20 09:00:00
+exec_def456        webhook/stripe-hook      ✓ success  0.8s       2025-01-20 08:45:00
+exec_ghi789        cron/daily-report        ✗ failed   0.3s       2025-01-19 09:00:00
+```
+
+#### `aio tr exec get`
+
+```bash
+aio tr exec get <exec-id>
+```
+
+---
+
+### Dead Letter Queue
+
+#### `aio tr dlq list`
+
+```bash
+aio tr dlq list [--trigger TYPE/NAME] [--limit N]
+```
+
+#### `aio tr dlq retry`
+
+```bash
+aio tr dlq retry <dlq-trn> [--force]
+```
+
+#### `aio tr dlq purge`
+
+```bash
+aio tr dlq purge [--trigger TYPE/NAME] [--before DATE] [--force]
+```
+
+---
+
+## Source Configuration Examples
+
+### Cron
+
+```json
+{
+  "schedule": "0 0 9 * * *",
+  "timezone": "Asia/Shanghai"
+}
+```
+
+> Uses 6-field cron format: `sec min hour day month weekday`
+
+### Webhook
+
+```json
+{
+  "path": "/webhooks/stripe",
+  "methods": ["POST"],
+  "auth": {
+    "type": "hmac_sha256",
+    "secret": "{% $secret('webhook-secret') %}"
+  }
+}
+```
+
+### HTTP Poll
+
+```json
+{
+  "url": "https://api.example.com/data",
+  "method": "GET",
+  "intervalMs": 300000,
+  "headers": {
+    "Authorization": "Bearer {% $secret('api-token') %}"
+  }
+}
+```
+
+### Kafka
+
+```json
+{
+  "brokers": ["kafka1:9092", "kafka2:9092"],
+  "topic": "orders",
+  "groupId": "igniter-consumer"
+}
+```
+
+---
+
+## TRN Patterns
+
+| Resource | TRN Pattern |
+|----------|-------------|
+| Trigger | `trn:igniter:{tenant}:trigger/{type}/{name}` |
+| Execution | `trn:igniter:{tenant}:execution/{id}` |
+| DLQ Entry | `trn:igniter:{tenant}:dlq/{id}` |
+
+---
+
+## Complete Workflow
+
+```bash
+# Create a cron trigger for daily reports
+aio tr create daily-report \
+  -t cron \
+  --config '{"schedule": "0 0 9 * * *", "timezone": "Asia/Shanghai"}' \
+  --action '{"target": "trn:stepflow:default:template/generate-report"}' \
+  -d "Daily sales report at 9am"
+
+# Test manually
+aio tr fire cron/daily-report --payload '{"manual": true}'
+
+# Check health and stats
+aio tr health cron/daily-report
+aio tr stats cron/daily-report
+
+# View execution history
+aio tr exec list --trigger cron/daily-report
+
+# Handle failed executions
+aio tr dlq list
+aio tr dlq retry trn:igniter:default:dlq/dlq_abc123
+
+# Disable for maintenance
+aio tr disable cron/daily-report
+aio tr enable cron/daily-report
+```
+
+---
+
+## Error Codes
+
+| Error | Exit Code | Message |
+|-------|-----------|---------|
+| Not Found | 1 | `Trigger '{type/name}' not found` |
+| Already Exists | 1 | `Trigger '{name}' already exists` |
+| Invalid Config | 1 | `Invalid configuration: {details}` |
+| Fire Failed | 1 | `Trigger execution failed: {reason}` |
+| Invalid Format | 2 | `Trigger requires type/name format` |
