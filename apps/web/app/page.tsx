@@ -1,5 +1,6 @@
 import { Header } from '@/components/header';
 import { Hero } from '@/components/hero';
+import { QuickStart } from '@/components/quick-start';
 import { ProblemSection } from '@/components/problem-section';
 import { SolutionSection } from '@/components/solution-section';
 import { ProofSection } from '@/components/proof-section';
@@ -13,7 +14,10 @@ export default function Page() {
         {/* 1. Hero - Core proposition */}
         <Hero />
 
-        {/* 2. Problem - Pain point resonance */}
+        {/* 2. Quick Start */}
+        <QuickStart />
+
+        {/* 3. Problem - Pain point resonance */}
         <ProblemSection />
 
         {/* 3. Solution - TRN rule system */}
