@@ -1,0 +1,10 @@
+{
+  "index": "Overview",
+  "functions": "Functions",
+  "workflows": "Workflows",
+  "parameters": "Parameters",
+  "credentials": "Credentials",
+  "triggers": "Triggers",
+  "connectors": "Connectors",
+  "authorization": "Authorization"
+}
