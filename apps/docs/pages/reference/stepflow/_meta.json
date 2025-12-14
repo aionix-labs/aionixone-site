@@ -1,7 +1,7 @@
 {
   "index": "Overview",
   "dsl": "DSL Specification",
-  "states": "State Types",
+  "states": "Step Types",
   "mapping": "Data Mapping",
   "context": "Context & Variables",
   "error-handling": "Error Handling",
