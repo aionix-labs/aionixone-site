@@ -497,7 +497,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
             <p className="mt-2 text-white/60">Single binary. Runs locally. Up in five minutes.</p>
             <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <a
-                href="https://github.com/aionixone/aionixone/releases"
+                href="https://github.com/aionix-labs/aionixone-releases"
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center justify-center rounded-full bg-cyan-500 px-5 py-2 text-sm font-medium text-black transition hover:bg-cyan-400"

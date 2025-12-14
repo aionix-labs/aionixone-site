@@ -48,7 +48,7 @@ export default function FeaturesPage() {
             </p>
             <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
               <a
-                href="https://github.com/aionixone/aionixone/releases"
+                href="https://github.com/aionix-labs/aionixone-releases"
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center justify-center rounded-full bg-cyan-500 px-5 py-2 text-sm font-medium text-black transition hover:bg-cyan-400"

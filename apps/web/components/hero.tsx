@@ -52,7 +52,7 @@ export function Hero() {
       {/* CTAs */}
       <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
         <Button asChild variant="primary">
-          <a href="https://github.com/aionixone/aionixone/releases" target="_blank" rel="noreferrer">
+          <a href="https://github.com/aionix-labs/aionixone-releases" target="_blank" rel="noreferrer">
             Download Community Edition
           </a>
         </Button>
