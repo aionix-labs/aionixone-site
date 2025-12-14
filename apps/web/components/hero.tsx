@@ -54,7 +54,7 @@ export function Hero() {
         <Button asChild variant="primary">
           <a href={`${DOCS_URL}/getting-started`}>Get Started</a>
         </Button>
-        <Button asChild variant="secondary">
+        <Button asChild variant="ghost">
           <a href="https://github.com/aionix-labs/aionixone-releases" target="_blank" rel="noreferrer">
             Download
           </a>
