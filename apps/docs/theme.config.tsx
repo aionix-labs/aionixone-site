@@ -15,9 +15,9 @@ const config: DocsThemeConfig = {
     </span>
   ),
   project: {
-    link: 'https://github.com/aionixone'
+    link: 'https://github.com/aionix-labs'
   },
-  docsRepositoryBase: 'https://github.com/aionixone/aionixone-site/tree/main/apps/docs/pages',
+  docsRepositoryBase: 'https://github.com/aionix-labs/aionixone-site/tree/main/apps/docs/pages',
   footer: {
     text: 'AionixOne — Portable Cloud Runtime'
   },
