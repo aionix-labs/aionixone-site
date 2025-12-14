@@ -5,9 +5,9 @@ import { useState } from 'react';
 export function QuickStart() {
   const [copied, setCopied] = useState(false);
 
-  const commands = `curl -fsSL https://get.aionixone.com | sh
-cd aionixone && ./setup.sh
-source .env && ./start.sh
+  const commands = `./setup.sh
+source .env
+./start.sh
 aio --help`;
 
   const handleCopy = async () => {
