@@ -4,5 +4,7 @@
   "examples": "Examples",
   "concepts": "Concepts",
   "reference": "Reference",
-  "tooling": "Tooling"
+  "dsl": "DSL",
+  "tooling": "Tooling",
+  "resources": "Resources"
 }
