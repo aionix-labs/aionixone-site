@@ -4,6 +4,14 @@ import { Header } from '@/components/header';
 // Blog posts data - will be moved to MDX files later
 const posts = [
   {
+    slug: 'distributed-governance',
+    title: 'Distributed Governance: Why Execution Needs a Constitution',
+    description:
+      'When we talk about distributed systems, most think of performance and scalability. But what truly goes out of control is often execution itself.',
+    date: '2025-12-14',
+    category: 'Philosophy'
+  },
+  {
     slug: 'introducing-aionixone',
     title: 'Introducing AionixOne: The Control Plane for Local Execution',
     description:

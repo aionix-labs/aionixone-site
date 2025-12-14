@@ -14,6 +14,232 @@ const posts: Record<
     content: string;
   }
 > = {
+  'distributed-governance': {
+    title: 'Distributed Governance: Why Execution Needs a Constitution',
+    description:
+      'When we talk about distributed systems, most think of performance and scalability. But what truly goes out of control is often execution itself.',
+    date: '2025-12-14',
+    category: 'Philosophy',
+    content: `
+## Execution Is Already Distributed — We Just Pretend It Isn't
+
+Real-world systems are no longer single-point execution:
+
+- Cron jobs
+- Serverless functions
+- CI/CD pipelines
+- Webhooks
+- Agent automation
+- Ad-hoc scripts
+- Workflow engines
+
+These executions happen:
+
+- On different machines
+- At different times
+- Under different permission contexts
+- By different authors
+
+Execution is already naturally distributed.
+
+But here's the problem — **governance is not**.
+
+---
+
+## Traditional Distributed Systems Solve "Fast Computing," Not "Correct Computing"
+
+Kubernetes, Temporal, Airflow, n8n, Windmill...
+
+They're excellent at solving:
+
+- Task scheduling
+- State recovery
+- Concurrent execution
+- Fault tolerance and retry
+
+But they rarely answer a more fundamental question:
+
+**Who, under what conditions, can execute what?**
+
+| Traditional Distributed Computing | Distributed Governance |
+|----------------------------------|------------------------|
+| Focus: Performance, Scalability | Focus: Security, Compliance, Control |
+| Unit: Computing Resources | Unit: Execution Boundaries |
+| Control: Centralized Scheduling | Control: Local Adjudication |
+| Failure: Retry / Crash | Failure: Deny / Reject |
+
+Computing fast matters. But computing wrong just once costs more.
+
+---
+
+## Execution Without Governance Is a Bug Factory
+
+Many systems assume a dangerous premise:
+
+**"If code can run, it should run."**
+
+So you see:
+
+- One expression crashes the entire system
+- One webhook triggers a flow it shouldn't
+- One agent gets permissions it shouldn't have
+- One header injection leads to privilege escalation
+
+The problem isn't "whether there are bugs" — it's whether the system allows bugs to become execution power.
+
+**If execution has no constitution, every bug can become a privilege escalation.**
+
+---
+
+## What Is an "Execution Constitution"?
+
+In AionixOne, we call this set of rules the **Execution Constitution**.
+
+It's not a metaphor — it's a set of immutable principles enforced by the system.
+
+Core constraints include:
+
+1. **Identity First** — No Principal, no execution.
+2. **Single Decision Point** — Each top-level execution allows only one authorization decision.
+3. **Policy-Driven** — Explicit Allow, Explicit Deny, otherwise Implicit Deny.
+4. **Deny Takes Precedence** — Explicit Deny always overrides Allow.
+5. **Immutable Rules** — Builtin policies cannot be deleted or modified.
+6. **Fully Auditable** — Every execution can answer: Who executed? What was executed? Why was it allowed/denied?
+
+This isn't a configuration option. It's system-level law.
+
+---
+
+## AionixOne's Distributed Governance Model
+
+AionixOne is not "a bigger distributed system."
+
+Its goal is different.
+
+**Not distributed computing — distributed governance.**
+
+- Execution is decentralized
+- Governance is embedded
+- Rules are unified
+
+Every AionixOne node is:
+
+**An autonomous node that can execute independently, but must follow the same constitution.**
+
+---
+
+## Three Core Abstractions
+
+### 1. Principal (Execution Subject)
+
+The system recognizes only three identity types:
+
+- **user**: Human operators
+- **agent**: Automated programs
+- **system**: Internal system components
+
+They cannot be mixed, impersonated, or escalated.
+
+---
+
+### 2. TRN (Unified Resource Identifier)
+
+Every resource is precisely identified:
+
+\`\`\`
+trn:{service}:{workspace}:{resource-type}/{resource-id}
+\`\`\`
+
+Examples:
+
+- \`trn:aionixfn:default:function/hello\`
+- \`trn:stepflow:prod:workflow/order-process\`
+
+No TRN, no execution target.
+
+---
+
+### 3. /api/execute (The Only Legal Execution Entry)
+
+All "real execution" operations must go through:
+
+\`\`\`
+/api/execute
+\`\`\`
+
+This is the constitutional entry point.
+
+- All policy decisions happen here
+- All unauthorized access is denied here
+- There are no "backdoor APIs"
+
+---
+
+## Why This Is Local-First
+
+AionixOne doesn't depend on a centralized control plane.
+
+- No cluster needed
+- No Master needed
+- No Controller needed
+
+Each node:
+
+- Executes locally
+- Adjudicates locally
+- Audits locally
+
+This means:
+
+**Governance capability is distributed to every execution point.**
+
+This is what we call **Distributed Governance**.
+
+---
+
+## What It Enables — and What It Prevents
+
+**What it enables:**
+
+- Local execution + global rules
+- Secure agent execution
+- Auditable automation
+- Governance that works offline
+
+**What it explicitly prevents:**
+
+- Header injection
+- Privilege escalation
+- Bypass paths around authorization
+- Dangerous "just run it" execution
+
+---
+
+## Governance Is Not an Afterthought
+
+Many systems treat security as:
+
+- A later feature
+- An enterprise add-on
+- An optional module
+
+AionixOne chose a harder path:
+
+**Governance is a prerequisite for execution systems, not a patch.**
+
+---
+
+## Conclusion
+
+We believe:
+
+**Before execution systems pursue scale, they should first have law.**
+
+AionixOne isn't trying to run faster. It's trying to run correctly, controllably, and auditably — wherever it runs.
+
+This is what we call **Distributed Governance**.
+    `
+  },
   'introducing-aionixone': {
     title: 'Introducing AionixOne: The Control Plane for Local Execution',
     description:
