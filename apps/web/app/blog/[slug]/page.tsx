@@ -1,3 +1,4 @@
+import React from 'react';
 import Link from 'next/link';
 import { Header } from '@/components/header';
 import { notFound } from 'next/navigation';
@@ -288,6 +289,50 @@ Download the Community Edition and bring governance to your local execution worl
   }
 };
 
+// Helper function to render inline formatting (bold, code, etc.)
+function renderInlineFormatting(text: string): React.ReactNode {
+  const parts: React.ReactNode[] = [];
+  let remaining = text;
+  let key = 0;
+
+  while (remaining.length > 0) {
+    const boldMatch = remaining.match(/\*\*([^*]+)\*\*/);
+    const codeMatch = remaining.match(/`([^`]+)`/);
+
+    const boldIndex = boldMatch?.index ?? Infinity;
+    const codeIndex = codeMatch?.index ?? Infinity;
+
+    if (boldIndex === Infinity && codeIndex === Infinity) {
+      parts.push(remaining);
+      break;
+    }
+
+    if (boldIndex <= codeIndex && boldMatch) {
+      if (boldIndex > 0) {
+        parts.push(remaining.slice(0, boldIndex));
+      }
+      parts.push(
+        <strong key={key++} className="font-semibold text-white">
+          {boldMatch[1]}
+        </strong>
+      );
+      remaining = remaining.slice(boldIndex + boldMatch[0].length);
+    } else if (codeMatch) {
+      if (codeIndex > 0) {
+        parts.push(remaining.slice(0, codeIndex));
+      }
+      parts.push(
+        <code key={key++} className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-sm text-cyan-400">
+          {codeMatch[1]}
+        </code>
+      );
+      remaining = remaining.slice(codeIndex + codeMatch[0].length);
+    }
+  }
+
+  return parts.length === 1 ? parts[0] : parts;
+}
+
 export function generateStaticParams() {
   return Object.keys(posts).map((slug) => ({ slug }));
 }
@@ -328,13 +373,27 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
           <div className="prose prose-invert mt-12 max-w-none prose-headings:font-semibold prose-h2:text-2xl prose-h2:mt-12 prose-h2:mb-4 prose-p:text-white/70 prose-p:leading-relaxed prose-a:text-cyan-400 prose-strong:text-white prose-code:text-cyan-400 prose-pre:bg-black/40 prose-pre:border prose-pre:border-white/10 prose-li:text-white/70">
             {/* Simple markdown-like rendering - will be replaced with MDX */}
             {post.content.split('\n\n').map((paragraph, i) => {
+              // Horizontal rule
+              if (paragraph.trim() === '---') {
+                return <hr key={i} className="my-8 border-white/10" />;
+              }
+              // H2
               if (paragraph.startsWith('## ')) {
                 return (
                   <h2 key={i} className="mt-12 mb-4 text-2xl font-semibold">
-                    {paragraph.replace('## ', '')}
+                    {renderInlineFormatting(paragraph.replace('## ', ''))}
                   </h2>
                 );
               }
+              // H3
+              if (paragraph.startsWith('### ')) {
+                return (
+                  <h3 key={i} className="mt-8 mb-3 text-xl font-semibold">
+                    {renderInlineFormatting(paragraph.replace('### ', ''))}
+                  </h3>
+                );
+              }
+              // Code block
               if (paragraph.startsWith('```')) {
                 const code = paragraph.replace(/```\w*\n?/g, '').trim();
                 return (
@@ -346,22 +405,85 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
                   </pre>
                 );
               }
+              // Table
+              if (paragraph.includes('|') && paragraph.split('\n').length > 1) {
+                const lines = paragraph.split('\n').filter((line) => line.trim());
+                // Check if it's a valid table (has header separator)
+                const hasSeparator = lines.some((line) => /^\|?[\s-|]+\|?$/.test(line));
+                if (hasSeparator) {
+                  const dataLines = lines.filter((line) => !/^\|?[\s-|]+\|?$/.test(line));
+                  const headers = dataLines[0]
+                    ?.split('|')
+                    .map((cell) => cell.trim())
+                    .filter(Boolean);
+                  const rows = dataLines.slice(1).map((line) =>
+                    line
+                      .split('|')
+                      .map((cell) => cell.trim())
+                      .filter(Boolean)
+                  );
+                  return (
+                    <div key={i} className="my-6 overflow-x-auto">
+                      <table className="w-full border-collapse text-sm">
+                        <thead>
+                          <tr className="border-b border-white/20">
+                            {headers?.map((header, j) => (
+                              <th
+                                key={j}
+                                className="px-4 py-3 text-left font-semibold text-white"
+                              >
+                                {renderInlineFormatting(header)}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {rows.map((row, j) => (
+                            <tr key={j} className="border-b border-white/10">
+                              {row.map((cell, k) => (
+                                <td key={k} className="px-4 py-3 text-white/70">
+                                  {renderInlineFormatting(cell)}
+                                </td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  );
+                }
+              }
+              // Unordered list
               if (paragraph.startsWith('- ')) {
                 const items = paragraph.split('\n').filter((line) => line.startsWith('- '));
                 return (
                   <ul key={i} className="my-4 list-disc space-y-2 pl-6">
                     {items.map((item, j) => (
                       <li key={j} className="text-white/70">
-                        {item.replace('- ', '')}
+                        {renderInlineFormatting(item.replace('- ', ''))}
                       </li>
                     ))}
                   </ul>
                 );
               }
+              // Numbered list
+              if (/^\d+\.\s/.test(paragraph)) {
+                const items = paragraph.split('\n').filter((line) => /^\d+\.\s/.test(line));
+                return (
+                  <ol key={i} className="my-4 list-decimal space-y-2 pl-6">
+                    {items.map((item, j) => (
+                      <li key={j} className="text-white/70">
+                        {renderInlineFormatting(item.replace(/^\d+\.\s/, ''))}
+                      </li>
+                    ))}
+                  </ol>
+                );
+              }
+              // Regular paragraph
               if (paragraph.trim()) {
                 return (
                   <p key={i} className="my-4 leading-relaxed text-white/70">
-                    {paragraph}
+                    {renderInlineFormatting(paragraph)}
                   </p>
                 );
               }
