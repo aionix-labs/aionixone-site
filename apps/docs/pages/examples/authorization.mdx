@@ -1,0 +1,104 @@
+---
+title: Authorization
+---
+
+# Authorization Demo
+
+API keys and policy management for production use.
+
+> **Note**: This is a Level 2 (Production Path) demo. For quick exploration,
+> the other examples work in Dev Mode without authentication setup.
+
+> **v0.1.1-alpha**: This release focuses on validating the governed execution core.
+> Authorization (ABAC) is fully enforced on `/api/execute`. CLI currently uses
+> REST APIs for convenience; full CLI → `/api/execute` convergence is planned for v0.1.2.
+
+## Prerequisites
+
+Stop Dev Mode server and restart with bootstrap:
+
+```bash
+# Stop any running server
+./stop.sh
+
+# Bootstrap creates first admin API key
+./bin/aionix-server --bootstrap-admin admin
+# Save the displayed API key (ak_xxx_yyy...)
+```
+
+Then start server normally:
+
+```bash
+./start.sh
+```
+
+## Setup CLI
+
+```bash
+# Set your admin API key
+export AIONIX_API_KEY="ak_xxx_yyy..."
+```
+
+## API Key Management
+
+```bash
+# List all API keys
+aio auth keys list
+
+# Create key for a user
+aio auth keys create alice-key -i alice -t user -d "Key for Alice"
+
+# Create key for an agent
+aio auth keys create bot-key -i my-bot -t agent -d "Automation bot"
+
+# Disable/enable key
+aio auth keys disable <key-id>
+aio auth keys enable <key-id>
+
+# Delete key
+aio auth keys delete <key-id>
+```
+
+## Policy Management
+
+```bash
+# List all policies
+aio auth policies list
+
+# Create policy allowing user to read functions
+aio auth policies create alice-read-fn \
+  -p "user:alice" \
+  -a read,invoke \
+  -r "trn:aionixfn:*:function/*" \
+  -d "Allow alice to read and invoke functions"
+
+# Create policy for agent (limited to specific workspace)
+aio auth policies create bot-invoke-prod \
+  -p "agent:my-bot" \
+  -a invoke \
+  -r "trn:aionixfn:prod:function/*" \
+  -d "Bot can only invoke prod functions"
+
+# Delete policy (-f to skip confirmation)
+aio auth policies delete alice-read-fn -f
+```
+
+## Principal Types
+
+| Type | Pattern | Use Case |
+|------|---------|----------|
+| `user` | `user:alice` | Human users |
+| `agent` | `agent:my-bot` | Automation/AI agents |
+| `system` | `system:scheduler` | Internal services |
+
+## Using API Key
+
+```bash
+# Via environment variable
+export AIONIX_API_KEY="ak_xxx..."
+aio fn list
+
+# Via HTTP header
+curl -H "X-API-Key: ak_xxx..." http://localhost:53000/api/fn/functions
+curl -H "Authorization: Bearer ak_xxx..." http://localhost:53000/api/fn/functions
+```

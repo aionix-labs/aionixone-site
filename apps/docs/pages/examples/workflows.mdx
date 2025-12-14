@@ -1,0 +1,55 @@
+---
+title: Workflows
+---
+
+# Workflows (StepFlow)
+
+Simple workflow example.
+
+## Create Workflow
+
+```bash
+aio wf create hello-workflow --dsl hello-workflow.json
+```
+
+**hello-workflow.json:**
+
+```json
+{
+  "description": "Simple hello world workflow",
+  "entry": "Greet",
+  "steps": {
+    "Greet": {
+      "type": "set",
+      "set": {
+        "message": "Hello, {% input.name | default: 'World' %}!",
+        "timestamp": "{% $now() %}"
+      },
+      "next": "Respond"
+    },
+    "Respond": {
+      "type": "succeed",
+      "output": {
+        "greeting": "{% message %}",
+        "time": "{% timestamp %}"
+      }
+    }
+  }
+}
+```
+
+## Run Workflow
+
+```bash
+# Run with input
+aio wf run hello-workflow --data '{"name": "Alice"}'
+
+# Check executions
+aio wf executions
+```
+
+## Cleanup
+
+```bash
+aio wf delete hello-workflow --force
+```

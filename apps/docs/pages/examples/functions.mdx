@@ -1,0 +1,103 @@
+---
+title: Functions
+---
+
+# AionixFn Demo
+
+Serverless function example.
+
+## Deploy
+
+```bash
+# Deploy Python function
+aio fn deploy hello-python \
+  --code . \
+  --handler handler:main \
+  --timeout 30 \
+  --memory 128
+```
+
+**handler.py:**
+
+```python
+"""
+Simple Python function for testing aionixfn.
+"""
+
+
+def main(event: dict, context: dict) -> dict:
+    """
+    Simple hello function that echoes input.
+
+    Args:
+        event: Input event data
+        context: Execution context (function name, version, etc.)
+
+    Returns:
+        Response with greeting message
+    """
+    name = event.get("name", "World")
+    version = context.get("version", "unknown")
+
+    return {
+        "message": f"Hello, {name}!",
+        "version": version,
+        "echo": event
+    }
+
+
+def add(event: dict, context: dict) -> dict:
+    """
+    Add two numbers.
+    """
+    a = event.get("a", 0)
+    b = event.get("b", 0)
+    return {"result": a + b}
+
+
+def error(event: dict, context: dict) -> dict:
+    """
+    Raise an error for testing error handling.
+    """
+    raise ValueError("Test error from function")
+```
+
+## Invoke
+
+```bash
+# Invoke with data
+aio fn invoke hello-python --data '{"name": "World"}'
+
+# Expected output:
+# {"message": "Hello, World!", "version": "v1", "echo": {"name": "World"}}
+```
+
+## Other Handlers
+
+The handler.py includes multiple handlers:
+
+```bash
+# Deploy add function
+aio fn deploy add-numbers --code . --handler handler:add
+aio fn invoke add-numbers --data '{"a": 10, "b": 20}'
+# Output: {"result": 30}
+```
+
+## Versions
+
+```bash
+# List versions
+aio fn versions hello-python
+
+# Re-deploy creates new version
+aio fn deploy hello-python --code . --handler handler:main
+
+# Invoke specific version (use full version name from 'aio fn versions')
+# Example: aio fn invoke hello-python --version v20251214073142-acf7
+```
+
+## Cleanup
+
+```bash
+aio fn delete hello-python --force
+```

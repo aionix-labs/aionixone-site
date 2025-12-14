@@ -1,0 +1,248 @@
+---
+title: Getting Started
+---
+
+# Getting Started
+
+## Quick Install
+
+### macOS (Apple Silicon)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/aionix-labs/aionixone-releases/main/install.sh | bash
+```
+
+Or manually:
+
+```bash
+# Download
+curl -LO https://github.com/aionix-labs/aionixone-releases/releases/latest/download/aionix-darwin-arm64.tar.gz
+
+# Extract
+tar -xzf aionix-darwin-arm64.tar.gz
+cd aionix-darwin-arm64
+
+# Setup & Start
+./setup.sh
+./start.sh
+```
+
+### Linux (x86_64)
+
+```bash
+# Download
+curl -LO https://github.com/aionix-labs/aionixone-releases/releases/latest/download/aionix-linux-x86_64.tar.gz
+
+# Extract
+tar -xzf aionix-linux-x86_64.tar.gz
+cd aionix-linux-x86_64
+
+# Setup & Start
+./setup.sh
+./start.sh
+```
+
+## Usage
+
+After installation:
+
+```bash
+# Load environment (required for CLI)
+source .env
+
+# Use CLI
+aio --help
+aio fn list
+aio param list
+aio wf list
+```
+
+## Quick Start
+
+```bash
+# 1. First time setup (creates admin API key)
+./setup.sh
+
+# 2. Load environment variables
+source .env
+
+# 3. Start server
+./start.sh
+
+# 4. Use CLI
+aio --help
+aio param list
+aio fn list
+```
+
+## Complete Usage Guide
+
+### Step 1: Setup (First Time Only)
+
+Run the setup script to create an admin API key:
+
+```bash
+./setup.sh
+```
+
+Output:
+
+```
+=== AionixOne Setup ===
+Creating admin API key...
+Setup complete!
+
+API Key: ak_XXXX_XXXX_XXXX
+
+Next steps:
+  1. source .env
+  2. ./start.sh
+  3. aio --help
+```
+
+**Important**: The API key is only shown once. It will be saved to `.env` automatically.
+
+### Step 2: Load Environment
+
+Load the environment variables (required before using CLI):
+
+```bash
+source .env
+```
+
+This sets:
+- `AIONIX_API_KEY` - Your authentication key
+- `AIONIX_URL` - Server URL (http://localhost:53000)
+- `PATH` - Adds `bin/` to your path
+
+### Step 3: Start Server
+
+```bash
+./start.sh
+```
+
+Output:
+
+```
+Starting AionixOne server...
+Server started!
+  PID: 12345
+  URL: http://localhost:53000
+  Log: ./data/server.log
+```
+
+### Step 4: Use CLI
+
+```bash
+# Show help
+aio --help
+
+# Parameter management
+aio param list
+aio param set myapp/config '{"debug": true}' --type json
+aio param get myapp/config
+
+# Function management
+aio fn list
+aio fn create my-function -r python3.11
+
+# Workflow management
+aio wf list
+
+# Credential management
+aio sec list
+```
+
+### Step 5: Stop Server
+
+```bash
+./stop.sh
+```
+
+### Check Server Status
+
+```bash
+./status.sh
+```
+
+## Scripts Reference
+
+| Script | Description |
+|--------|-------------|
+| `setup.sh` | First time setup, creates admin API key |
+| `start.sh` | Start server in background |
+| `stop.sh` | Stop server |
+| `status.sh` | Check server status and show recent logs |
+
+## Package Contents
+
+```
+aionix-<platform>/
+├── bin/
+│   ├── aionix-server    # Server binary
+│   └── aio              # CLI binary
+├── setup.sh             # First time setup
+├── start.sh             # Start server
+├── stop.sh              # Stop server
+├── status.sh            # Check status
+└── README.md
+```
+
+## Server
+
+- **URL**: http://localhost:53000
+- **Health Check**: http://localhost:53000/health
+
+## Community Edition Limits
+
+| Resource | Limit |
+|----------|-------|
+| Governed Objects | 25 |
+| Tenants | 1 |
+| Features | All enabled |
+
+Governed objects include: Functions, Triggers, Workflows, Connections, Secrets, Parameters.
+
+## Requirements
+
+- macOS 12+ (Apple Silicon) or Linux (x86_64)
+- 512MB RAM minimum
+- 1GB disk space
+
+## Troubleshooting
+
+### macOS Security Warning
+
+If you see "cannot be opened because the developer cannot be verified":
+
+```bash
+xattr -d com.apple.quarantine bin/aio bin/aionix-server
+```
+
+### Server won't start
+
+```bash
+# Check if port is in use
+lsof -i :53000
+
+# Check logs
+cat data/server.log
+```
+
+### CLI authentication error
+
+```bash
+# Make sure environment is loaded
+source .env
+
+# Verify API key is set
+echo $AIONIX_API_KEY
+```
+
+### Reset everything
+
+```bash
+./stop.sh
+rm -rf data .env .pid
+./setup.sh
+```

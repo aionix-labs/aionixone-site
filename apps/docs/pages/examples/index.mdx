@@ -1,0 +1,59 @@
+---
+title: Examples
+---
+
+# AionixOne Examples
+
+Demo examples for each AionixOne service.
+
+## Quick Start (Dev Mode)
+
+These examples run in development mode with relaxed authorization for easy exploration.
+
+| Service | Description |
+|---------|-------------|
+| [AionixFn](/examples/functions) | Serverless functions |
+| [Stepflow](/examples/workflows) | Workflow orchestration |
+| [ParamStore](/examples/parameters) | Parameter management |
+| [CredVault](/examples/credentials) | Credential management |
+| [Igniter](/examples/triggers) | Event triggers |
+| [OpenAct](/examples/connectors) | Action connectors |
+
+### Try It
+
+```bash
+# 1. Start server
+./start.sh
+
+# 2. Source environment
+source .env
+
+# 3. Run a demo
+cd examples/aionixfn
+aio fn deploy hello-python --code . --handler handler:main
+aio fn invoke hello-python --data '{"name": "World"}'
+```
+
+## Production Path (Auth Required)
+
+For production use, AionixOne provides full policy-based authorization.
+
+| Feature | Description |
+|---------|-------------|
+| [Auth](/examples/authorization) | API keys & policies |
+
+Production setup requires:
+1. Bootstrap admin with `--bootstrap-admin`
+2. Create API keys for users/agents
+3. Define policies for access control
+
+See [Auth Reference](/reference/auth) for details.
+
+## Getting Help
+
+```bash
+aio --help
+aio fn --help
+aio wf --help
+aio auth --help
+```

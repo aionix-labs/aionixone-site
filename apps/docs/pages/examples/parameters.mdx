@@ -1,0 +1,45 @@
+---
+title: Parameters
+---
+
+# ParamStore Demo
+
+Parameter management example.
+
+## Create Parameters
+
+```bash
+# Create a string parameter
+aio param set my-app/database-url --type string --value "postgres://localhost:5432/mydb"
+
+# Create a JSON parameter
+aio param set my-app/settings --type json --value '{"timeout": 30, "retries": 3}'
+
+# With description
+aio param set my-app/api-key --type string --value "sk_live_xxx" -d "API key for external service"
+```
+
+## Read Parameters
+
+```bash
+# Get single parameter
+aio param get my-app/database-url --type string
+
+# List all parameters
+aio param list
+```
+
+## Update & Versions
+
+```bash
+# Update creates new version
+aio param set my-app/database-url --type string --value "postgres://prod:5432/mydb"
+```
+
+## Cleanup
+
+```bash
+aio param delete my-app/database-url --type string --force
+aio param delete my-app/settings --type json --force
+aio param delete my-app/api-key --type string --force
+```

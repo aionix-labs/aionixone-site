@@ -1,0 +1,55 @@
+---
+title: Triggers
+---
+
+# Igniter Demo
+
+Event trigger example.
+
+## Prerequisites
+
+Create a workflow first:
+
+```bash
+cd ../stepflow
+aio wf create hello-workflow --dsl hello-workflow.json
+```
+
+## Create Triggers
+
+```bash
+# Create cron trigger (every 2 minutes)
+# Note: 6-field cron format (sec min hour day month weekday)
+aio tr create my-cron -t cron \
+  --config '{"schedule":"0 */2 * * * *","timezone":"UTC"}' \
+  --action '{"target":"trn:stepflow:default:workflow/hello-workflow:start"}'
+
+# Create webhook trigger
+aio tr create my-webhook -t webhook \
+  --config '{"path":"/hooks/test","methods":["POST"]}' \
+  --action '{"target":"trn:stepflow:default:workflow/hello-workflow:start"}'
+```
+
+## List & Check
+
+```bash
+# List all triggers
+aio tr list
+
+# Get trigger details (use type prefix)
+aio tr get cron/my-cron
+```
+
+## Fire Trigger
+
+```bash
+# Manually fire trigger (use type prefix)
+aio tr fire cron/my-cron --payload '{"manual":true}'
+```
+
+## Cleanup
+
+```bash
+aio tr delete cron/my-cron --force
+aio tr delete webhook/my-webhook --force
+```

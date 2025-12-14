@@ -1,0 +1,44 @@
+---
+title: Connectors
+---
+
+# OpenAct Demo
+
+Action connector example.
+
+## Create HTTP Connection
+
+```bash
+# Create HTTP connection (note: use camelCase for config fields)
+aio act conn create my-api -t http \
+  --config '{"baseUrl":"https://httpbin.org"}'
+
+# List connections
+aio act conn list
+```
+
+## Create Action
+
+```bash
+# Create an HTTP action
+aio act create my-action -t http \
+  -c http/my-api \
+  --config '{"method":"GET","path":"/status/200","response":{"successCodes":[200]}}'
+
+# List actions
+aio act list
+```
+
+## Execute Action
+
+```bash
+# Execute the action (use type prefix)
+aio act execute http/my-action -o json
+```
+
+## Cleanup
+
+```bash
+aio act delete http/my-action --force
+aio act conn delete http/my-api --force
+```
